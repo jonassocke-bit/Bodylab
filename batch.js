@@ -163,6 +163,7 @@ export class BatchLab{
     Für „Hüfte“ verwenden wir ANSURs Buttock Circumference als nächstes direktes Umfangs-Analog.
    </div>
    <div id="batchDatasetInfo" class="batchInfo">Noch kein Datensatz geladen.</div>
+   <div id="batchGenderDiag" class="batchInfo genderDiag">Gender-Diagnose: noch kein Datensatz geladen.</div>
 
    <div class="generatorSectionTitle">TESTUMFANG</div>
    <div class="generatorGrid">
@@ -234,6 +235,7 @@ export class BatchLab{
   this.panel.querySelector("#batchExport").onclick=()=>this.export();
   this.panel.querySelector("#optTarget").onchange=()=>this.renderOptimizer();
   this.panel.querySelector("#optMetric").onchange=()=>this.renderOptimizer();
+  this.panel.querySelector("#batchLimit").onchange=()=>this.updateGenderDiag();
  }
  async loadANSUR(which){
   const buttons=["ansurFemale","ansurMale","ansurAll"].map(id=>this.panel.querySelector("#"+id));
@@ -253,8 +255,23 @@ export class BatchLab{
      if(row.height&&row.weight&&row.chest&&row.waist&&row.torso&&row.hip&&row.shoulder)rows.push(row);
     }
    }
-   this.rows=rows;
-   this.showDataset(which==="all"?"ANSUR II · alle realen Personen":`ANSUR II · ${which==="female"?"Frauen":"Männer"}`);
+   // For a mixed dataset, interleave sexes before applying the user's row limit.
+   // Previously "all" appended all female rows first and all male rows afterwards.
+   // Therefore a 250-row mixed batch silently contained only the first 250 women.
+   if(which==="all"){
+    const females=rows.filter(r=>r.gender===0);
+    const males=rows.filter(r=>r.gender===1);
+    const mixed=[];
+    const n=Math.max(females.length,males.length);
+    for(let i=0;i<n;i++){
+     if(i<females.length)mixed.push(females[i]);
+     if(i<males.length)mixed.push(males[i]);
+    }
+    this.rows=mixed;
+   }else{
+    this.rows=rows;
+   }
+   this.showDataset(which==="all"?"ANSUR II · gemischt/interleaved":`ANSUR II · ${which==="female"?"Frauen":"Männer"}`);
   }catch(err){
    console.error(err);
    info.innerHTML=`<b>ANSUR-Download fehlgeschlagen</b><span>${esc(err.message||err)}</span>`;
@@ -290,11 +307,23 @@ export class BatchLab{
  showDataset(name="Datensatz"){
   const n=this.rows.length,has={};
   for(const k of ["chest","waist","torso","hip","shoulder","underbust"])has[k]=this.rows.filter(r=>r[k]!=null).length;
-  const female=this.rows.filter(r=>r.gender===0).length,male=this.rows.filter(r=>r.gender===1).length;
+  const female=this.rows.filter(r=>r.gender===0).length,male=this.rows.filter(r=>r.gender===1).length,neutral=n-female-male;
   this.panel.querySelector("#batchDatasetInfo").innerHTML=
-   `<b>${esc(name)} · ${n} Personen</b><span>${female?`♀ ${female} · `:""}${male?`♂ ${male} · `:""}`+
+   `<b>${esc(name)} · ${n} Personen</b><span>geladen: ♀ ${female} · ♂ ${male}${neutral?` · neutral ${neutral}`:""} · `+
    Object.entries(has).map(([k,v])=>`${LABELS[k]} ${v}/${n}`).join(" · ")+"</span>";
+  this.updateGenderDiag();
  }
+ updateGenderDiag(rows=null,current=null,scenario=null){
+  const box=this.panel?.querySelector("#batchGenderDiag");if(!box)return;
+  const limit=Number(this.panel.querySelector("#batchLimit")?.value||0);
+  const sample=rows || (limit?this.rows.slice(0,limit):this.rows);
+  const f=sample.filter(r=>r.gender===0).length,m=sample.filter(r=>r.gender===1).length,n=sample.length-f-m;
+  let currentText="";
+  if(current){
+   currentText=`<br><b>Aktuell:</b> Quelle ${current.gender===0?"♀ Female":current.gender===1?"♂ Male":"Neutral"} · MakeHuman Gender ${Math.round(current.gender*100)}%${scenario?` · ${esc(scenario.name)}`:""}`;
+  }
+  box.innerHTML=`<b>Gender-Diagnose · effektiver Batch</b><span>${sample.length} Personen · ♀ ${f} · ♂ ${m}${n?` · neutral ${n}`:""}${currentText}</span>`;
+ } 
  scenarios(){
   if(this.panel.querySelector("#batchMode").value==="ladder")return SCENARIOS;
   const dims=["chest","waist","torso","hip","shoulder"];
@@ -311,7 +340,11 @@ export class BatchLab{
  }
  async solveCase(row,scenario){
   const e=this.engine,l=this.lab;
-  e.reset();e.state.gender=row.gender;e.state.age=Math.max(0,Math.min(1,l.ageToSlider(row.age)));e.state.muscle=Math.max(0,Math.min(1,row.build));
+  e.reset();
+  const g=row.gender===0?0:row.gender===1?1:.5;
+  e.state.gender=g;
+  e.state.age=Math.max(0,Math.min(1,l.ageToSlider(row.age)));
+  e.state.muscle=Math.max(0,Math.min(1,row.build));
   e.updateBody({normals:false,metrics:false});
   await l.solveCore("height",row.height,"height",0,1);
   await l.solveCore("weight",row.weight,"weight",0,1);
@@ -365,9 +398,15 @@ export class BatchLab{
      if(this.abort)throw new Error("__ABORT__");
      const r=rows[ri];
      if(s.use.some(k=>r[k]==null))continue;
-     await this.tick(`${s.name} · Person ${ri+1}/${rows.length}`,`${done}/${total} Modellläufe`);
+     this.updateGenderDiag(rows,r,s);
+     await this.tick(`${s.name} · Person ${ri+1}/${rows.length}`,`${done}/${total} Modellläufe · ${r.gender===0?"♀ Female":r.gender===1?"♂ Male":"Neutral"}`);
      const out=await this.solveCase(r,s);usedRows++;done++;
-     const rec={scenario:s.id,scenarioName:s.name,row:r.sourceRow,inputs:s.use,reference:r,mesh:out,errors:{}};
+     const rec={
+      scenario:s.id,scenarioName:s.name,row:r.sourceRow,inputs:s.use,
+      sourceGender:r.gender,sourceSex:r.gender===0?"female":r.gender===1?"male":"neutral",
+      appliedMakeHumanGender:r.gender===0?0:r.gender===1?1:.5,
+      reference:r,mesh:out,errors:{}
+     };
      for(const k of MEASURE_KEYS){
       if(r[k]==null)continue;
       const err=out[k]-r[k],ae=Math.abs(err);rec.errors[k]=err;
@@ -408,7 +447,16 @@ export class BatchLab{
     });
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
-   this.results={build:"BODY LAB v3.5.0",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
+   this.results={
+    build:"BODY LAB v3.5.1",createdAt:new Date().toISOString(),
+    sourceRows:rows.length,
+    genderComposition:{
+     female:rows.filter(r=>r.gender===0).length,
+     male:rows.filter(r=>r.gender===1).length,
+     neutral:rows.filter(r=>r.gender!==0&&r.gender!==1).length
+    },
+    scenarioCount:scenarios.length,summary,raw
+   };
    this.renderResults();
    this.renderOptimizer();
    this.renderHarnessBlindValidation();
@@ -418,6 +466,7 @@ export class BatchLab{
    if(err.message!=="__ABORT__")console.error(err),alert("Batchfehler: "+(err.message||err));
   }finally{
    this.engine.restore(before);this.ui.sync();this.engine.computeMetrics();
+   this.updateGenderDiag(rows);
    this.panel.querySelector("#batchRun").disabled=false;this.panel.querySelector("#batchAbort").disabled=true;
    this.panel.querySelector("#batchProgress").classList.add("hidden");
   }
@@ -483,5 +532,5 @@ export class BatchLab{
   <div class="batchMeasureMatrix"><b>Unbekannte Kontrollmaße dieser Variante</b>${BLIND_KEYS.map(k=>{const m=best.blindPerMeasure?.[k];return m&&m.n?`<span>${BLIND_LABELS[k]}: <strong>${m.mae.toFixed(2)} cm</strong> · P90 ${m.p90.toFixed(2)} cm · n=${m.n}</span>`:""}).join("")}</div>
   <div class="batchMeasureMatrix"><b>Top 5 nach Blind-MAE</b>${rows.slice(0,5).map((x,i)=>`<span>${i+1}. <strong>${x.blindMAE.toFixed(2)} cm</strong> · ${x.use.length+2} Angaben · ${x.use.length?x.use.map(k=>LABELS[k]).join(" + "):"nur Größe + Gewicht"}</span>`).join("")}</div>`;
  }
- export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.5.0-Batch-Report.json",JSON.stringify(this.results,null,2))}
+ export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.5.1-Batch-Report.json",JSON.stringify(this.results,null,2))}
 }
