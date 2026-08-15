@@ -36,7 +36,7 @@ export class MeasurementLab{
  render(){
   this.panel.innerHTML=`
    <div class="generatorHead">
-    <div><strong>BODY LAB · MEASUREMENT LAB</strong><small>V3.1 · wenige Maße → MakeHuman-Körper</small></div>
+    <div><strong>BODY LAB · MEASUREMENT LAB</strong><small>V3.7 · wenige Maße → MakeHuman-Körper</small></div>
     <button id="genClose">Schließen</button>
    </div>
 
@@ -95,6 +95,7 @@ export class MeasurementLab{
 
    <div class="generatorActions">
     <button id="genRun" class="primary">Modell generieren</button>
+    <button id="genV37Info">V3.7 Kalibrierung</button>
     <button id="genLandmarks">Messpunkte anzeigen</button>
     <button id="genSaveProfile">Testprofil speichern</button>
     <button id="genExport" disabled>Report exportieren</button>
@@ -104,6 +105,7 @@ export class MeasurementLab{
   `;
   this.panel.querySelector("#genClose").onclick=()=>this.panel.classList.add("hidden");
   this.panel.querySelector("#genRun").onclick=()=>this.run();
+  this.panel.querySelector("#genV37Info").onclick=()=>alert("V3.7 wird zunächst im Calibration Lab per A/B validiert. Erst nach nachgewiesener Verbesserung wird die Formkorrektur standardmäßig im Generator aktiviert.");
   this.panel.querySelector("#genLandmarks").onclick=()=>{
    const visible=this.engine.toggleLandmarks();
    this.panel.querySelector("#genLandmarks").textContent=visible?"Messpunkte ausblenden":"Messpunkte anzeigen";
@@ -337,7 +339,7 @@ export class MeasurementLab{
   if(v.underbust)rows.push({key:"underbust",label:"Unterbrustumfang",target:v.underbust,actual:o.underbust,used:v.useUnderbust,unit:"cm"});
   if(v.shoulder)rows.push({key:"shoulder",label:"Schulterbreite",target:v.shoulder,actual:o.shoulder,used:v.useShoulder,unit:"cm",landmark:true});
   this.lastReport={
-   build:"BODY LAB v3.1.1",
+   build:"BODY LAB v3.7.0",
    createdAt:new Date().toISOString(),
    inputs:v,rows,
    state:this.engine.snapshot(),

@@ -55,8 +55,8 @@ function splitPairs(pairs){
 }
 
 export class CalibrationLab{
- constructor(engine,ui,batchLab){
-  this.engine=engine;this.ui=ui;this.batch=batchLab;
+ constructor(engine,ui,batchLab,solverV37){
+  this.engine=engine;this.ui=ui;this.batch=batchLab;this.solverV37=solverV37;
   this.panel=document.getElementById("calibrationPanel");
   this.button=document.getElementById("calibrationToggle");
   this.calibration=null;this.sensitivity=null;this.abort=false;
@@ -80,7 +80,19 @@ export class CalibrationLab{
    </div>
    <div id="calResults" class="calResults"></div>
 
-   <div class="generatorSectionTitle">B · MORPH SENSITIVITY MATRIX</div>
+   <div class="generatorSectionTitle">B · V3.7 CALIBRATED CORE-5 SOLVER</div>
+   <div class="generatorIntro compact">
+    Lernt aus den aktuell geladenen ANSUR-Personen die zu Core‑5 passenden Rumpfbreiten/-tiefen.
+    Danach korrigiert eine kleine, aus der V3.6-Sensitivity ausgewählte Morph-Gruppe die Körperform,
+    während Brust, Taille und Hüfte als harte Tape-Maße nach jedem Schritt wieder verriegelt werden.
+   </div>
+   <div class="generatorActions">
+    <button id="v37Train" class="primary">Core‑5 Modell trainieren</button>
+    <button id="v37AB" disabled>Baseline vs. V3.7 testen</button>
+   </div>
+   <div id="v37Results" class="calResults"></div>
+
+   <div class="generatorSectionTitle">C · MORPH SENSITIVITY MATRIX</div>
    <div class="generatorIntro compact">
     Jeder Body-Regler wird auf einer weiblichen und einer männlichen Standardbasis kurz perturbiert.
     Gemessen wird, welche realen Körperdimensionen sich dabei tatsächlich verändern. Face-Regler werden bewusst ausgelassen.
@@ -105,6 +117,8 @@ export class CalibrationLab{
   this.panel.querySelector("#calRun").onclick=()=>this.runCalibration();
   this.panel.querySelector("#calActivate").onclick=()=>this.activateCalibration();
   this.panel.querySelector("#calExport").onclick=()=>this.calibration&&download("BodyLab-v3.6-Measurement-Calibration.json",this.calibration);
+  this.panel.querySelector("#v37Train").onclick=()=>this.trainV37();
+  this.panel.querySelector("#v37AB").onclick=()=>this.testV37();
   this.panel.querySelector("#sensRun").onclick=()=>this.runSensitivity();
   this.panel.querySelector("#sensAbort").onclick=()=>{this.abort=true};
   this.panel.querySelector("#sensExport").onclick=()=>this.sensitivity&&download("BodyLab-v3.6-Morph-Sensitivity.json",this.sensitivity);
@@ -169,6 +183,38 @@ export class CalibrationLab{
   if(!this.calibration)return;
   localStorage.setItem(PROFILE_KEY,JSON.stringify({...this.calibration,active:true}));
   alert("Kalibrierprofil gespeichert. V3.6 markiert es als aktiv; automatische Solver-Anwendung kommt erst nach der Validierung der Kalibrierwerte.");
+ }
+ trainV37(){
+  const rows=this.batch?.rows||[];
+  if(rows.length<50){alert("Bitte im Batch Lab zuerst mindestens 50 ANSUR-Personen laden. Ein Solver-Batch muss dafür nicht laufen.");return}
+  const model=this.solverV37.train(rows);
+  const box=this.panel.querySelector("#v37Results");
+  box.innerHTML=`<div class="optimizerHero"><small>V3.7 STATISTISCHES FORMMODELL</small><strong>${model.rows} Personen</strong><span>80/20 Holdout · Core‑5 → unbekannte Rumpfform</span><b>${Object.keys(model.targets).length} Zielmaße gelernt</b></div>
+   <div class="calTable calHead"><span>Ziel</span><span>Train</span><span>Test</span><span>MAE</span></div>
+   ${Object.entries(model.targets).map(([k,m])=>`<div class="calTable"><span><b>${k}</b><small>Bias ${m.bias.toFixed(2)} cm</small></span><span>${m.nTrain}</span><span>${m.nTest}</span><span>${m.mae.toFixed(2)}</span></div>`).join("")}`;
+  this.panel.querySelector("#v37AB").disabled=false;
+ }
+ async testV37(){
+  if(!this.solverV37.trained()){alert("Bitte zuerst Core‑5 Modell trainieren.");return}
+  const rows=(this.batch?.rows||[]).filter(r=>[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,50);
+  if(!rows.length){alert("Keine geeigneten ANSUR-Zeilen geladen.");return}
+  const before=this.engine.snapshot(),base=[],cal=[],box=this.panel.querySelector("#v37Results");
+  try{
+   for(let i=0;i<rows.length;i++){
+    const r=rows[i];
+    box.innerHTML=`<div class="generatorProgress"><b>A/B Test ${i+1}/${rows.length}</b><span>Baseline + V3.7 auf derselben Person</span></div>`;
+    await this.solverV37.baselineCore5(r);
+    const eb=Object.values(this.solverV37.harnessBlindErrors(r)).filter(Number.isFinite);base.push(...eb.map(Math.abs));
+    await this.solverV37.correct(r,{passes:3});
+    const ec=Object.values(this.solverV37.harnessBlindErrors(r)).filter(Number.isFinite);cal.push(...ec.map(Math.abs));
+    await new Promise(q=>setTimeout(q,0));
+   }
+   const mb=mean(base),mc=mean(cal),gain=mb-mc;
+   box.innerHTML=`<div class="optimizerHero ${gain>0?"hit":"miss"}"><small>CORE‑5 A/B · ${rows.length} PERSONEN</small><strong>${mc.toFixed(2)} cm</strong><span>Baseline ${mb.toFixed(2)} cm → V3.7 ${mc.toFixed(2)} cm</span><b>${gain>=0?"Verbesserung":"Verschlechterung"} ${Math.abs(gain).toFixed(2)} cm</b></div>
+   <div class="batchMeasureMatrix"><b>Entscheidungsregel</b><span>Nur wenn V3.7 auf diesem unabhängigen A/B-Lauf besser ist, übernehmen wir die Formkorrektur später in den normalen Generator.</span></div>`;
+  }finally{
+   this.engine.restore(before);this.ui.sync();this.engine.computeMetrics();
+  }
  }
  metricSnapshot(){
   const e=this.engine,h=e.harnessBlindMetrics();

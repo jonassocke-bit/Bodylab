@@ -1,4 +1,4 @@
-# Harness Body Lab v3.6.0 — clean rewrite
+# Harness Body Lab v3.7.0 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
 
@@ -27,15 +27,15 @@ Each parameter can be classified as Main / Fine / Advanced, renamed, annotated, 
 and supplied with calibration/reference marks.
 
 ## Rig / poses
-The original MakeHuman default rig data is loaded and counted, but v3.6.0 deliberately does not
+The original MakeHuman default rig data is loaded and counted, but v3.7.0 deliberately does not
 apply the previously unreliable manual arm poses. Proper BVH / Mixamo retargeting will be added
 as a separately testable module after this clean baseline is validated.
 
-## v3.6.0 hotfix
+## v3.7.0 hotfix
 Fixed the strict-mode runtime error in the Face-group builder. Advanced group/control creation is now defensive so one malformed control cannot abort the whole boot.
 
 
-## v3.6.0 — Measurement Lab
+## v3.7.0 — Measurement Lab
 
 Adds the first user-facing body generator.
 
@@ -65,7 +65,7 @@ The solver uses the original MakeHuman measurement morphs and allows internal di
 extrapolation to ±180% while the core height/weight macros remain inside their native 0–100% range.
 
 
-## v3.6.0 — Landmark Calibration
+## v3.7.0 — Landmark Calibration
 
 Replaces the two V3.1 measurement proxies that produced the large first-test errors.
 
@@ -89,7 +89,7 @@ The generator also adds a coupled stabilization loop so torso-length changes no 
 height/weight at the values produced by a later morph.
 
 
-## v3.6.0 — Batch Lab
+## v3.7.0 — Batch Lab
 
 Adds CSV/JSON dataset import and automated questionnaire comparison.
 
@@ -118,7 +118,7 @@ optimization, uses fewer stabilization passes than the interactive generator, an
 previous visible body after the batch completes.
 
 
-## v3.6.0 — CSV blank-value hotfix
+## v3.7.0 — CSV blank-value hotfix
 
 Important correctness fix:
 empty numeric CSV cells are now imported as `null` / unavailable rather than JavaScript numeric zero.
@@ -128,7 +128,7 @@ measurement. This could add roughly 80–100 cm of error per person and made the
 ranking meaningless. Re-run the same CSV after installing V3.2.1.
 
 
-## v3.6.0 — ANSUR II direct loader
+## v3.7.0 — ANSUR II direct loader
 
 The Batch Lab can now load the public ANSUR II individual records directly:
 - 1,986 female subjects
@@ -148,18 +148,18 @@ Mapping to Body Lab:
 Important: ANSUR definitions and MakeHuman ruler definitions are not guaranteed to be anatomically identical.
 Systematic errors may therefore reflect measurement-definition mismatch as well as model-shape error.
 
-## v3.6.0 — Questionnaire Optimizer
+## v3.7.0 — Questionnaire Optimizer
 After a 32-combination batch, derives the smallest questionnaire meeting a selectable MAE target, the Pareto-best subset at each questionnaire length, and average/median marginal value of every optional measurement.
 
-## v3.6.0 — Blind Validation
+## v3.7.0 — Blind Validation
 Five additional ANSUR-II measurements are never solver inputs: neck, wrist, thigh, calf and ankle circumference.
 Every questionnaire now reports Blind-MAE/RMSE/P90 and per-measure blind errors. The optimizer defaults to Blind-MAE.
 
-## v3.6.0 — Harness Blind Validation
+## v3.7.0 — Harness Blind Validation
 Adds harness-focused blind metrics: chest breadth/depth, waist breadth/depth, hip breadth, waist back length and neck-base circumference. None are solver inputs. The optimizer defaults to Harness Blind-MAE while Whole-Body Blind-MAE remains available.
 
 
-## v3.6.0 — Mixed Gender Batch Fix + Diagnostics
+## v3.7.0 — Mixed Gender Batch Fix + Diagnostics
 
 Fixes an important sampling bug in mixed ANSUR batches:
 
@@ -185,7 +185,7 @@ For an ANSUR "all" batch with Max. Personen 250, the effective sample should now
 approximately 125 female and 125 male records.
 
 
-## v3.6.0 — Global Calibration Lab
+## v3.7.0 — Global Calibration Lab
 
 V3.6 begins the active calibration phase.
 
@@ -207,3 +207,23 @@ morphs for the later calibrated solver instead of optimizing all controls blindl
 Calibration profiles can be stored locally as active candidates, but V3.6 intentionally does not
 silently alter production solver behavior yet. Calibration must first demonstrate improvement on
 the held-out validation split.
+
+
+## v3.7.0 — Calibrated Core-5 Solver Candidate
+
+Built from the user's actual V3.6 Measurement Calibration and Morph Sensitivity exports.
+
+V3.7 adds:
+- embedded V3.6 ANSUR↔MakeHuman measurement calibration coefficients,
+- an 80/20-held-out statistical model predicting harness-relevant hidden torso geometry from
+  gender + height + weight + BMI + chest + waist + hip and ratio features,
+- a deliberately small safe morph set selected from the V3.6 sensitivity matrix,
+- coordinate-descent form correction with explicit chest/waist/hip re-locking after each pass,
+- a 50-person baseline-vs-calibrated A/B validator.
+
+Low-R² protocol mappings are down-weighted or excluded from geometry correction. In particular,
+a large apparent MAE improvement is not treated as evidence of geometric validity when the V3.6
+training R² shows that the MakeHuman measurement carries almost no individual information.
+
+The production Generator is not silently switched to V3.7 yet. The candidate must first beat the
+baseline in the built-in A/B test.

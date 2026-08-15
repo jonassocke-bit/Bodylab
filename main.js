@@ -5,6 +5,7 @@ import {setupDebug} from "./debug.js";
 import {MeasurementLab} from "./generator.js";
 import {BatchLab} from "./batch.js";
 import {CalibrationLab} from "./calibration.js";
+import {CalibratedSolverV37} from "./solver-v37.js";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
 function progress(a,b){title.textContent=a;detail.textContent=b||""}
@@ -30,12 +31,13 @@ async function boot(){
 
  const measurementLab=new MeasurementLab(engine,ui);
  const batchLab=new BatchLab(engine,ui,measurementLab);
- const calibrationLab=new CalibrationLab(engine,ui,batchLab);
+ const solverV37=new CalibratedSolverV37(engine,ui,measurementLab,batchLab);
+ const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37);
  engine.computeMetrics();
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
  setTimeout(()=>card.classList.add("hidden"),500);
 
- window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab};
+ window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab,solverV37};
 }
 boot().catch(err=>{
  console.error(err);
