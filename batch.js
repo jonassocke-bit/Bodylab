@@ -12,6 +12,10 @@ const SCENARIOS=[
  {id:"core5_s",name:"CORE 5 + Schulter",use:["chest","waist","torso","shoulder"]},
  {id:"core5_h",name:"CORE 5 + Hüfte",use:["chest","waist","torso","hip"]}
 ];
+const ANSUR_URLS={
+ female:"https://raw.githubusercontent.com/senihberkay/US-Army-ANSUR-II/refs/heads/master/ANSUR%20II%20FEMALE%20Public.csv",
+ male:"https://raw.githubusercontent.com/senihberkay/US-Army-ANSUR-II/refs/heads/master/ANSUR%20II%20MALE%20Public.csv"
+};
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function norm(s){return String(s??"").toLowerCase().trim().replace(/[ä]/g,"ae").replace(/[ö]/g,"oe").replace(/[ü]/g,"ue").replace(/[ß]/g,"ss").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
@@ -78,6 +82,31 @@ function normalizeRow(o){
   chest:cv("chest"),waist:cv("waist"),torso:cv("torso"),hip:cv("hip"),shoulder:cv("shoulder"),underbust:cv("underbust")
  };
 }
+function normalizeANSURRow(o,sourceSex){
+ const mm=k=>{const v=num(o[k]);return v===null?null:v/10};
+ const ah=num(o.acromialheight),ch=num(o.crotchheight);
+ const torso=(ah===null||ch===null)?null:(ah-ch)/10;
+ const wk=num(o.weightkg);
+ const sex=String(o.gender||sourceSex||"").toLowerCase();
+ return {
+  sourceRow:o.subjectid||o.__row,
+  gender:sex.startsWith("f")?0:1,
+  age:num(o.age)??30,
+  height:mm("stature"),
+  weight:wk===null?null:wk/10,
+  build:.52,
+  chest:mm("chestcircumference"),
+  waist:mm("waistcircumference"),
+  torso,
+  // ANSUR II calls this buttock circumference. It is our closest direct
+  // analogue to the maximum hip / seat circumference used by the Body Lab.
+  hip:mm("buttockcircumference"),
+  shoulder:mm("biacromialbreadth"),
+  underbust:null,
+  sourceDataset:"ANSUR II",
+  sourceSex:sex.startsWith("f")?"female":"male"
+ };
+}
 
 export class BatchLab{
  constructor(engine,ui,measurementLab){
@@ -103,6 +132,17 @@ export class BatchLab{
     <button id="batchSample">Referenzbeispiel laden</button>
     <button id="batchTemplate">CSV-Vorlage</button>
    </div>
+   <div class="generatorSectionTitle">ECHTE ANSUR-II-PERSONEN</div>
+   <div class="batchImport">
+    <button id="ansurFemale">1.986 Frauen laden</button>
+    <button id="ansurMale">4.082 Männer laden</button>
+    <button id="ansurAll" class="primary">Alle 6.068 laden</button>
+   </div>
+   <div class="generatorIntro compact">
+    Direkt gemessene ANSUR-II-Personen. Größe, Brust, Taille, Biacromial-Schulterbreite und Körpermasse
+    kommen direkt aus dem Datensatz. Schulter→Schritt wird aus Acromialhöhe minus Schritthöhe gebildet.
+    Für „Hüfte“ verwenden wir ANSURs Buttock Circumference als nächstes direktes Umfangs-Analog.
+   </div>
    <div id="batchDatasetInfo" class="batchInfo">Noch kein Datensatz geladen.</div>
 
    <div class="generatorSectionTitle">TESTUMFANG</div>
@@ -114,6 +154,9 @@ export class BatchLab{
       <option value="50">50</option>
       <option value="100">100</option>
       <option value="250">250</option>
+      <option value="500">500</option>
+      <option value="1000">1.000</option>
+      <option value="2000">2.000</option>
       <option value="0">Alle</option>
      </select>
     </label>
@@ -141,9 +184,40 @@ export class BatchLab{
   this.panel.querySelector("#batchSample").onclick=()=>this.loadSample();
   this.panel.querySelector("#batchTemplate").onclick=()=>this.downloadTemplate();
   this.panel.querySelector("#batchFile").onchange=e=>this.loadFile(e.target.files?.[0]);
+  this.panel.querySelector("#ansurFemale").onclick=()=>this.loadANSUR("female");
+  this.panel.querySelector("#ansurMale").onclick=()=>this.loadANSUR("male");
+  this.panel.querySelector("#ansurAll").onclick=()=>this.loadANSUR("all");
   this.panel.querySelector("#batchRun").onclick=()=>this.run();
   this.panel.querySelector("#batchAbort").onclick=()=>{this.abort=true};
   this.panel.querySelector("#batchExport").onclick=()=>this.export();
+ }
+ async loadANSUR(which){
+  const buttons=["ansurFemale","ansurMale","ansurAll"].map(id=>this.panel.querySelector("#"+id));
+  buttons.forEach(x=>x.disabled=true);
+  const info=this.panel.querySelector("#batchDatasetInfo");
+  try{
+   const sexes=which==="all"?["female","male"]:[which];
+   const rows=[];
+   for(const sex of sexes){
+    info.innerHTML=`<b>ANSUR II lädt …</b><span>${sex==="female"?"Frauen":"Männer"} werden heruntergeladen und umgerechnet.</span>`;
+    const r=await fetch(ANSUR_URLS[sex],{cache:"force-cache"});
+    if(!r.ok)throw new Error("ANSUR "+sex+" HTTP "+r.status);
+    const text=await r.text();
+    const raw=parseDelimited(text);
+    for(const x of raw){
+     const row=normalizeANSURRow(x,sex);
+     if(row.height&&row.weight&&row.chest&&row.waist&&row.torso&&row.hip&&row.shoulder)rows.push(row);
+    }
+   }
+   this.rows=rows;
+   this.showDataset(which==="all"?"ANSUR II · alle realen Personen":`ANSUR II · ${which==="female"?"Frauen":"Männer"}`);
+  }catch(err){
+   console.error(err);
+   info.innerHTML=`<b>ANSUR-Download fehlgeschlagen</b><span>${esc(err.message||err)}</span>`;
+   alert("ANSUR konnte nicht geladen werden: "+(err.message||err));
+  }finally{
+   buttons.forEach(x=>x.disabled=false);
+  }
  }
  loadSample(){
   this.rows=[{
@@ -172,8 +246,9 @@ export class BatchLab{
  showDataset(name="Datensatz"){
   const n=this.rows.length,has={};
   for(const k of ["chest","waist","torso","hip","shoulder","underbust"])has[k]=this.rows.filter(r=>r[k]!=null).length;
+  const female=this.rows.filter(r=>r.gender===0).length,male=this.rows.filter(r=>r.gender===1).length;
   this.panel.querySelector("#batchDatasetInfo").innerHTML=
-   `<b>${esc(name)} · ${n} Personen</b><span>`+
+   `<b>${esc(name)} · ${n} Personen</b><span>${female?`♀ ${female} · `:""}${male?`♂ ${male} · `:""}`+
    Object.entries(has).map(([k,v])=>`${LABELS[k]} ${v}/${n}`).join(" · ")+"</span>";
  }
  scenarios(){
@@ -267,7 +342,7 @@ export class BatchLab{
     });
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
-   this.results={build:"BODY LAB v3.2.1",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
+   this.results={build:"BODY LAB v3.2.2",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
    this.renderResults();
    this.panel.querySelector("#batchExport").disabled=false;
   }catch(err){
@@ -303,5 +378,5 @@ export class BatchLab{
     }).join("")}
    </div>`;
  }
- export(){if(this.results)download("BodyLab-v3.2.1-Batch-Report.json",JSON.stringify(this.results,null,2))}
+ export(){if(this.results)download("BodyLab-v3.2.2-Batch-Report.json",JSON.stringify(this.results,null,2))}
 }

@@ -123,3 +123,5 @@ body.revisionMode .revisionRow{display:block}
 .batchTable>span:first-child{text-align:left;min-width:0}.batchTable b,.batchTable small{display:block}.batchTable b{font-size:9px}.batchTable small{font-size:6px;color:#777;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .batchTableHead{font-size:7px;color:#666;border-top:0;padding-top:3px}.batchTable.best{background:rgba(255,255,255,.04);border-radius:8px}.batchTable.best>span:nth-child(3){font-weight:700;color:#b9e8c0}
 .batchMeasureMatrix{margin-top:9px;padding:9px;background:rgba(255,255,255,.025);border-radius:10px;font-size:7px;color:#888;line-height:1.5}.batchMeasureMatrix>b,.batchMeasureMatrix>span{display:block}.batchMeasureMatrix>b{color:#aaa;margin-bottom:4px}.batchMeasureMatrix strong{color:#ddd}
+
+#ansurAll.primary{background:#eee;color:#111}
