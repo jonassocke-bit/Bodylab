@@ -231,3 +231,7 @@ baseline in the built-in A/B test.
 
 ## V3.8 Mess-Revision
 Neuer visueller Messprotokoll-Review: 7 priorisierte Maße, direkte Mesh-Markierung, verständliche Beschreibung, Offset-Revision, Status und JSON-Export. Bestehende Parameter-Revision bleibt erhalten.
+
+
+## V3.8.1
+Mess-Revision is now a true bottom sheet (~43–44% viewport height). The 3D mannequin remains visible above it; measurement selection is a compact horizontal strip and only the review sheet scrolls.

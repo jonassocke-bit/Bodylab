@@ -37,8 +37,12 @@ export class MeasureReviewLab{
  save(){localStorage.setItem(KEY,JSON.stringify(this.data))}
  get m(){return MEASURES.find(x=>x.id===this.active)}
  build(){
-  this.panel.innerHTML=`<div class="mrHead"><div><div class="sectionLabel">MESS-REVISION · V3.8</div><h2>Messmethoden prüfen</h2><p>Ein Maß auswählen → Linie direkt am Modell ansehen → bei Bedarf verschieben → Entscheidung speichern.</p></div><button id="mrClose">Schließen</button></div>
-  <div class="mrLayout"><div id="mrList" class="mrList"></div><div id="mrCard" class="mrCard"></div></div>
+  this.panel.innerHTML=`<div class="mrSheetHandle"><span></span></div>
+  <div class="mrHead"><div><div class="sectionLabel">MESS-REVISION · V3.8.1</div><h2>Messmethoden prüfen</h2><p>Maß wählen → Linie am Modell prüfen → bei Bedarf korrigieren.</p></div><button id="mrClose">Schließen</button></div>
+  <div class="mrBody">
+    <div id="mrList" class="mrList"></div>
+    <div id="mrCard" class="mrCard"></div>
+  </div>
   <div class="mrFooter"><button id="mrExport">Revision exportieren</button><span id="mrProgress"></span></div>`;
   this.panel.querySelector("#mrClose").onclick=()=>this.toggle(false);
   this.panel.querySelector("#mrExport").onclick=()=>this.export();
@@ -101,7 +105,7 @@ export class MeasureReviewLab{
   if(show){this.renderList();this.renderCard();this.draw()}
  }
  export(){
-  const out={build:"BODY LAB v3.8.0",type:"measurement-protocol-review",exportedAt:new Date().toISOString(),source:"ANSUR II Measurer's Handbook / Body Lab mapping review",reviews:MEASURES.map(m=>({id:m.id,title:m.title,ansur:m.ansur,...(this.data[m.id]||{})}))};
+  const out={build:"BODY LAB v3.8.1",type:"measurement-protocol-review",exportedAt:new Date().toISOString(),source:"ANSUR II Measurer's Handbook / Body Lab mapping review",reviews:MEASURES.map(m=>({id:m.id,title:m.title,ansur:m.ansur,...(this.data[m.id]||{})}))};
   const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="BODYLAB_MEASURE_REVIEW_V3.8.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)
  }
 }
