@@ -190,6 +190,29 @@ export class BodyEngine{
   return this.landmarksVisible;
  }
 
+ measurePathExtents(name){
+  const path=MEASURE_RULERS[name],a=this.body?.geometry?.attributes?.position?.array;
+  if(!path||!a||!path.length)return {widthCm:NaN,depthCm:NaN,heightCm:NaN};
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const vi of path){
+   const i=vi*3,x=a[i],y=a[i+1],z=a[i+2];
+   if(x<minX)minX=x;if(x>maxX)maxX=x;if(y<minY)minY=y;if(y>maxY)maxY=y;if(z<minZ)minZ=z;if(z>maxZ)maxZ=z;
+  }
+  return {widthCm:(maxX-minX)*100,depthCm:(maxZ-minZ)*100,heightCm:(maxY-minY)*100};
+ }
+ harnessBlindMetrics(){
+  const chest=this.measurePathExtents("measure-bust-circ");
+  const waist=this.measurePathExtents("measure-waist-circ");
+  const hip=this.measurePathExtents("measure-hips-circ");
+  return {
+   chestBreadth:chest.widthCm,chestDepth:chest.depthCm,
+   waistBreadth:waist.widthCm,waistDepth:waist.depthCm,
+   hipBreadth:hip.widthCm,
+   waistBackLength:this.getMeasureCm("measure-napetowaist-dist"),
+   neckBase:this.getMeasureCm("measure-neck-circ")
+  };
+ }
+
  heightCm(){
   if(!this.body)return NaN;
   this.body.geometry.computeBoundingBox();

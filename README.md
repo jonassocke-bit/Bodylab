@@ -1,4 +1,4 @@
-# Harness Body Lab v3.4.0 — clean rewrite
+# Harness Body Lab v3.5.0 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
 
@@ -27,15 +27,15 @@ Each parameter can be classified as Main / Fine / Advanced, renamed, annotated, 
 and supplied with calibration/reference marks.
 
 ## Rig / poses
-The original MakeHuman default rig data is loaded and counted, but v3.4.0 deliberately does not
+The original MakeHuman default rig data is loaded and counted, but v3.5.0 deliberately does not
 apply the previously unreliable manual arm poses. Proper BVH / Mixamo retargeting will be added
 as a separately testable module after this clean baseline is validated.
 
-## v3.4.0 hotfix
+## v3.5.0 hotfix
 Fixed the strict-mode runtime error in the Face-group builder. Advanced group/control creation is now defensive so one malformed control cannot abort the whole boot.
 
 
-## v3.4.0 — Measurement Lab
+## v3.5.0 — Measurement Lab
 
 Adds the first user-facing body generator.
 
@@ -65,7 +65,7 @@ The solver uses the original MakeHuman measurement morphs and allows internal di
 extrapolation to ±180% while the core height/weight macros remain inside their native 0–100% range.
 
 
-## v3.4.0 — Landmark Calibration
+## v3.5.0 — Landmark Calibration
 
 Replaces the two V3.1 measurement proxies that produced the large first-test errors.
 
@@ -89,7 +89,7 @@ The generator also adds a coupled stabilization loop so torso-length changes no 
 height/weight at the values produced by a later morph.
 
 
-## v3.4.0 — Batch Lab
+## v3.5.0 — Batch Lab
 
 Adds CSV/JSON dataset import and automated questionnaire comparison.
 
@@ -118,7 +118,7 @@ optimization, uses fewer stabilization passes than the interactive generator, an
 previous visible body after the batch completes.
 
 
-## v3.4.0 — CSV blank-value hotfix
+## v3.5.0 — CSV blank-value hotfix
 
 Important correctness fix:
 empty numeric CSV cells are now imported as `null` / unavailable rather than JavaScript numeric zero.
@@ -128,7 +128,7 @@ measurement. This could add roughly 80–100 cm of error per person and made the
 ranking meaningless. Re-run the same CSV after installing V3.2.1.
 
 
-## v3.4.0 — ANSUR II direct loader
+## v3.5.0 — ANSUR II direct loader
 
 The Batch Lab can now load the public ANSUR II individual records directly:
 - 1,986 female subjects
@@ -148,9 +148,12 @@ Mapping to Body Lab:
 Important: ANSUR definitions and MakeHuman ruler definitions are not guaranteed to be anatomically identical.
 Systematic errors may therefore reflect measurement-definition mismatch as well as model-shape error.
 
-## v3.4.0 — Questionnaire Optimizer
+## v3.5.0 — Questionnaire Optimizer
 After a 32-combination batch, derives the smallest questionnaire meeting a selectable MAE target, the Pareto-best subset at each questionnaire length, and average/median marginal value of every optional measurement.
 
-## v3.4.0 — Blind Validation
+## v3.5.0 — Blind Validation
 Five additional ANSUR-II measurements are never solver inputs: neck, wrist, thigh, calf and ankle circumference.
 Every questionnaire now reports Blind-MAE/RMSE/P90 and per-measure blind errors. The optimizer defaults to Blind-MAE.
+
+## v3.5.0 — Harness Blind Validation
+Adds harness-focused blind metrics: chest breadth/depth, waist breadth/depth, hip breadth, waist back length and neck-base circumference. None are solver inputs. The optimizer defaults to Harness Blind-MAE while Whole-Body Blind-MAE remains available.

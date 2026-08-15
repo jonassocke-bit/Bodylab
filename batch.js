@@ -7,6 +7,9 @@ const LABELS={
 const BLIND_KEYS=["neck","wrist","thigh","calf","ankle"];
 const BLIND_LABELS={neck:"Halsumfang",wrist:"Handgelenk",thigh:"Oberschenkel",calf:"Wade",ankle:"Knöchel"};
 const BLIND_RULERS={neck:"measure-neck-circ",wrist:"measure-wrist-circ",thigh:"measure-thigh-circ",calf:"measure-calf-circ",ankle:"measure-ankle-circ"};
+const HARNESS_BLIND_KEYS=["chestBreadth","chestDepth","waistBreadth","waistDepth","hipBreadth","waistBackLength","neckBase"];
+const HARNESS_BLIND_LABELS={chestBreadth:"Brustbreite",chestDepth:"Brusttiefe",waistBreadth:"Taillenbreite",waistDepth:"Taillentiefe",hipBreadth:"Hüftbreite",waistBackLength:"Rückenlänge bis Taille",neckBase:"Halsumfang Basis"};
+
 
 const SCENARIOS=[
  {id:"hw",name:"H + W",use:[]},
@@ -112,6 +115,13 @@ function normalizeANSURRow(o,sourceSex){
   thigh:mm("thighcircumference"),
   calf:mm("calfcircumference"),
   ankle:mm("anklecircumference"),
+  chestBreadth:mm("chestbreadth"),
+  chestDepth:mm("chestdepth"),
+  waistBreadth:mm("waistbreadth"),
+  waistDepth:mm("waistdepth"),
+  hipBreadth:mm("hipbreadth"),
+  waistBackLength:mm("waistbacklength"),
+  neckBase:mm("neckcircumferencebase"),
   sourceDataset:"ANSUR II",
   sourceSex:sex.startsWith("f")?"female":"male"
  };
@@ -190,12 +200,15 @@ export class BatchLab{
      </select>
     </label>
     <label>Optimieren nach
-     <select id="optMetric"><option value="blindMAE" selected>Blind-MAE · empfohlen</option><option value="fullMAE">Gesamt-MAE</option><option value="holdoutMAE">Holdout-MAE</option></select>
+     <select id="optMetric"><option value="harnessBlindMAE" selected>Harness Blind-MAE · empfohlen</option><option value="blindMAE">Whole-Body Blind-MAE</option><option value="fullMAE">Gesamt-MAE</option><option value="holdoutMAE">Holdout-MAE</option></select>
     </label>
    </div>
    <div class="generatorIntro compact">Nach einem 32-Kombinationen-Lauf sucht der Optimizer automatisch den kleinsten Fragebogen, der dein Fehlerziel erreicht.</div>
    <div id="optimizerResults" class="batchResults"></div>
-   <div class="generatorSectionTitle">BLIND VALIDATION</div>
+   <div class="generatorSectionTitle">HARNESS BLIND VALIDATION</div>
+   <div class="generatorIntro compact">Brust-/Taillenbreite und -tiefe, Hüftbreite, Rückenlänge bis Taille und Halsbasis werden <b>niemals</b> als Solver-Ziele verwendet. Sie prüfen die tatsächliche Rumpfform hinter den eingegebenen Umfängen.</div>
+   <div id="harnessBlindResults" class="batchResults"></div>
+   <div class="generatorSectionTitle">WHOLE-BODY BLIND VALIDATION</div>
    <div class="generatorIntro compact">
     Hals-, Handgelenk-, Oberschenkel-, Waden- und Knöchelumfang werden niemals an den Solver übergeben.
     Sie prüfen ausschließlich, ob der restliche Körper ohne direkte Vorgabe plausibel mitkommt.
@@ -329,7 +342,8 @@ export class BatchLab{
    shoulder:e.shoulderBreadthCm(),underbust:e.getMeasureCm("measure-underbust-circ"),
    neck:e.getMeasureCm(BLIND_RULERS.neck),wrist:e.getMeasureCm(BLIND_RULERS.wrist),
    thigh:e.getMeasureCm(BLIND_RULERS.thigh),calf:e.getMeasureCm(BLIND_RULERS.calf),
-   ankle:e.getMeasureCm(BLIND_RULERS.ankle)
+   ankle:e.getMeasureCm(BLIND_RULERS.ankle),
+   ...e.harnessBlindMetrics()
   };
  }
  async run(){
@@ -345,6 +359,7 @@ export class BatchLab{
     const inputErrors=Object.fromEntries(MEASURE_KEYS.map(k=>[k,[]]));
     const allErrors=Object.fromEntries(MEASURE_KEYS.map(k=>[k,[]]));
     const blindErrors=Object.fromEntries(BLIND_KEYS.map(k=>[k,[]]));
+    const harnessBlindErrors=Object.fromEntries(HARNESS_BLIND_KEYS.map(k=>[k,[]]));
     let usedRows=0;
     for(let ri=0;ri<rows.length;ri++){
      if(this.abort)throw new Error("__ABORT__");
@@ -364,18 +379,26 @@ export class BatchLab{
       if(r[k]==null||!Number.isFinite(out[k]))continue;
       const err=out[k]-r[k];rec.blindErrors[k]=err;blindErrors[k].push(Math.abs(err));
      }
+     rec.harnessBlindErrors={};
+     for(const k of HARNESS_BLIND_KEYS){
+      if(r[k]==null||!Number.isFinite(out[k]))continue;
+      const err=out[k]-r[k];rec.harnessBlindErrors[k]=err;harnessBlindErrors[k].push(Math.abs(err));
+     }
      raw.push(rec);
     }
     const holdout=[].concat(...Object.values(errors));
     const fit=[].concat(...Object.values(inputErrors));
     const all=[].concat(...Object.values(allErrors));
     const blind=[].concat(...Object.values(blindErrors));
+    const harnessBlind=[].concat(...Object.values(harnessBlindErrors));
     summary.push({
      id:s.id,name:s.name,use:s.use,people:usedRows,
      fullMAE:mean(all),fullRMSE:rmse(all),fullP90:percentile(all,.9),
      holdoutMAE:mean(holdout),holdoutRMSE:rmse(holdout),holdoutP90:percentile(holdout,.9),
      blindMAE:mean(blind),blindRMSE:rmse(blind),blindP90:percentile(blind,.9),
      blindPerMeasure:Object.fromEntries(BLIND_KEYS.map(k=>[k,{n:blindErrors[k].length,mae:mean(blindErrors[k]),p90:percentile(blindErrors[k],.9)}])),
+     harnessBlindMAE:mean(harnessBlind),harnessBlindRMSE:rmse(harnessBlind),harnessBlindP90:percentile(harnessBlind,.9),
+     harnessBlindPerMeasure:Object.fromEntries(HARNESS_BLIND_KEYS.map(k=>[k,{n:harnessBlindErrors[k].length,mae:mean(harnessBlindErrors[k]),p90:percentile(harnessBlindErrors[k],.9)}])),
      fitMAE:mean(fit),
      perMeasure:Object.fromEntries(MEASURE_KEYS.map(k=>[k,{
        n:allErrors[k].length,mae:mean(allErrors[k]),p90:percentile(allErrors[k],.9),
@@ -385,9 +408,10 @@ export class BatchLab{
     });
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
-   this.results={build:"BODY LAB v3.4.0",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
+   this.results={build:"BODY LAB v3.5.0",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
    this.renderResults();
    this.renderOptimizer();
+   this.renderHarnessBlindValidation();
    this.renderBlindValidation();
    this.panel.querySelector("#batchExport").disabled=false;
   }catch(err){
@@ -439,6 +463,16 @@ export class BatchLab{
   <div class="batchMeasureMatrix"><b>Pareto-Pfad · beste Variante je Länge</b>${gains.map(g=>`<span>${g.x.use.length+2} Angaben: <strong>${g.x[metric].toFixed(2)} cm</strong> · ${g.x.use.length?g.x.use.map(k=>LABELS[k]).join(" + "):"nur Größe + Gewicht"}${g.gain!==null?` · Gewinn <strong>${g.gain.toFixed(2)} cm</strong>`:""}</span>`).join("")}</div>
   <div class="batchMeasureMatrix"><b>Ø Grenznutzen einer zusätzlichen Messung</b>${marginal.map(x=>`<span>${LABELS[x.k]}: <strong>−${x.avg.toFixed(2)} cm</strong> · Median −${x.median.toFixed(2)} cm · ${x.n} Paarvergleiche</span>`).join("")}</div>`;
  }
+ renderHarnessBlindValidation(){
+  const box=this.panel?.querySelector("#harnessBlindResults");if(!box)return;
+  if(!this.results){box.innerHTML="";return}
+  const rows=this.results.summary.filter(x=>Number.isFinite(x.harnessBlindMAE)).sort((a,b)=>a.harnessBlindMAE-b.harnessBlindMAE);
+  if(!rows.length){box.innerHTML='<div class="batchInfo">Keine Harness-Blind-Maße im Datensatz vorhanden.</div>';return}
+  const best=rows[0];
+  box.innerHTML=`<div class="optimizerHero harness"><small>BESTE HARNESS-BLIND-REKONSTRUKTION</small><strong>${best.harnessBlindMAE.toFixed(2)} cm</strong><span>Größe · Gewicht${best.use.length?" · "+best.use.map(k=>LABELS[k]).join(" · "):""}</span><b>P90 ${best.harnessBlindP90.toFixed(2)} cm · ${best.people} Personen</b></div>
+  <div class="batchMeasureMatrix"><b>Unbekannte Harness-Kontrollmaße</b>${HARNESS_BLIND_KEYS.map(k=>{const m=best.harnessBlindPerMeasure?.[k];return m&&m.n?`<span>${HARNESS_BLIND_LABELS[k]}: <strong>${m.mae.toFixed(2)} cm</strong> · P90 ${m.p90.toFixed(2)} cm · n=${m.n}</span>`:""}).join("")}</div>
+  <div class="batchMeasureMatrix"><b>Top 5 nach Harness Blind-MAE</b>${rows.slice(0,5).map((x,i)=>`<span>${i+1}. <strong>${x.harnessBlindMAE.toFixed(2)} cm</strong> · ${x.use.length+2} Angaben · ${x.use.length?x.use.map(k=>LABELS[k]).join(" + "):"nur Größe + Gewicht"}</span>`).join("")}</div>`;
+ }
  renderBlindValidation(){
   const box=this.panel?.querySelector("#blindResults");if(!box)return;
   if(!this.results){box.innerHTML="";return}
@@ -449,5 +483,5 @@ export class BatchLab{
   <div class="batchMeasureMatrix"><b>Unbekannte Kontrollmaße dieser Variante</b>${BLIND_KEYS.map(k=>{const m=best.blindPerMeasure?.[k];return m&&m.n?`<span>${BLIND_LABELS[k]}: <strong>${m.mae.toFixed(2)} cm</strong> · P90 ${m.p90.toFixed(2)} cm · n=${m.n}</span>`:""}).join("")}</div>
   <div class="batchMeasureMatrix"><b>Top 5 nach Blind-MAE</b>${rows.slice(0,5).map((x,i)=>`<span>${i+1}. <strong>${x.blindMAE.toFixed(2)} cm</strong> · ${x.use.length+2} Angaben · ${x.use.length?x.use.map(k=>LABELS[k]).join(" + "):"nur Größe + Gewicht"}</span>`).join("")}</div>`;
  }
- export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.4.0-Batch-Report.json",JSON.stringify(this.results,null,2))}
+ export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.5.0-Batch-Report.json",JSON.stringify(this.results,null,2))}
 }
