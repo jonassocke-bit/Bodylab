@@ -136,3 +136,9 @@ body.revisionMode .revisionRow{display:block}
 .genderDiag{border:1px solid rgba(255,255,255,.08)}
 .genderDiag b{color:#ddd}
 .genderDiag span{line-height:1.55}
+
+/* V3.6 Calibration Lab */
+.calResults{margin-top:9px}
+.calTable{display:grid;grid-template-columns:minmax(125px,1.7fr) .55fr .55fr .5fr;gap:5px;align-items:center;border-top:1px solid rgba(255,255,255,.055);padding:7px 6px;font-size:8px;text-align:right}
+.calTable>span:first-child{text-align:left}.calTable b,.calTable small{display:block}.calTable small{font-size:6px;color:#777;margin-top:2px}.calHead{color:#666;font-size:7px;border-top:0}.calGood{color:#b9e8c0}.calBad{color:#e8b9b9}
+.sensRow{border-top:1px solid rgba(255,255,255,.055);padding:0 5px}.sensRow summary{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0}.sensRow summary span{text-align:left;min-width:0}.sensRow summary b,.sensRow summary small{display:block}.sensRow summary small{font-size:6px;color:#777;margin-top:2px}.sensRow summary>strong{font-size:9px}.sensRow>div{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:0 0 8px;font-size:7px;color:#999}.sensRow>div span{display:flex;justify-content:space-between;gap:5px}.sensRow>div b{color:#ddd}

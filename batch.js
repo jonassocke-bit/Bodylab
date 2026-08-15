@@ -9,6 +9,9 @@ const BLIND_LABELS={neck:"Halsumfang",wrist:"Handgelenk",thigh:"Oberschenkel",ca
 const BLIND_RULERS={neck:"measure-neck-circ",wrist:"measure-wrist-circ",thigh:"measure-thigh-circ",calf:"measure-calf-circ",ankle:"measure-ankle-circ"};
 const HARNESS_BLIND_KEYS=["chestBreadth","chestDepth","waistBreadth","waistDepth","hipBreadth","waistBackLength","neckBase"];
 const HARNESS_BLIND_LABELS={chestBreadth:"Brustbreite",chestDepth:"Brusttiefe",waistBreadth:"Taillenbreite",waistDepth:"Taillentiefe",hipBreadth:"Hüftbreite",waistBackLength:"Rückenlänge bis Taille",neckBase:"Halsumfang Basis"};
+const CAL_EXTRA_KEYS=["upperarmCirc","upperarmLength","lowerarmLength","lowerlegHeight","upperlegHeight"];
+const CAL_EXTRA_LABELS={upperarmCirc:"Oberarmumfang",upperarmLength:"Oberarmlänge",lowerarmLength:"Unterarmlänge",lowerlegHeight:"Unterschenkelhöhe",upperlegHeight:"Oberschenkelhöhe"};
+
 
 
 const SCENARIOS=[
@@ -122,6 +125,14 @@ function normalizeANSURRow(o,sourceSex){
   hipBreadth:mm("hipbreadth"),
   waistBackLength:mm("waistbacklength"),
   neckBase:mm("neckcircumferencebase"),
+
+  // Additional reasonably comparable dimensions used only by Calibration Lab.
+  upperarmCirc:mm("bicepscircumferenceflexed"),
+  upperarmLength:mm("acromionradialelength"),
+  lowerarmLength:mm("radialestylionlength"),
+  lowerlegHeight:mm("tibialheight"),
+  upperlegHeight:(num(o.trochanterionheight)!==null&&num(o.tibialheight)!==null)?(num(o.trochanterionheight)-num(o.tibialheight))/10:null,
+
   sourceDataset:"ANSUR II",
   sourceSex:sex.startsWith("f")?"female":"male"
  };
@@ -376,7 +387,12 @@ export class BatchLab{
    neck:e.getMeasureCm(BLIND_RULERS.neck),wrist:e.getMeasureCm(BLIND_RULERS.wrist),
    thigh:e.getMeasureCm(BLIND_RULERS.thigh),calf:e.getMeasureCm(BLIND_RULERS.calf),
    ankle:e.getMeasureCm(BLIND_RULERS.ankle),
-   ...e.harnessBlindMetrics()
+   ...e.harnessBlindMetrics(),
+   upperarmCirc:e.getMeasureCm("measure-upperarm-circ"),
+   upperarmLength:e.getMeasureCm("measure-upperarm-length"),
+   lowerarmLength:e.getMeasureCm("measure-lowerarm-length"),
+   lowerlegHeight:e.getMeasureCm("measure-lowerleg-height"),
+   upperlegHeight:e.getMeasureCm("measure-upperleg-height")
   };
  }
  async run(){
@@ -423,6 +439,11 @@ export class BatchLab{
       if(r[k]==null||!Number.isFinite(out[k]))continue;
       const err=out[k]-r[k];rec.harnessBlindErrors[k]=err;harnessBlindErrors[k].push(Math.abs(err));
      }
+     rec.calibrationExtraErrors={};
+     for(const k of CAL_EXTRA_KEYS){
+      if(r[k]==null||!Number.isFinite(out[k]))continue;
+      rec.calibrationExtraErrors[k]=out[k]-r[k];
+     }
      raw.push(rec);
     }
     const holdout=[].concat(...Object.values(errors));
@@ -448,7 +469,7 @@ export class BatchLab{
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
    this.results={
-    build:"BODY LAB v3.5.1",createdAt:new Date().toISOString(),
+    build:"BODY LAB v3.6.0",createdAt:new Date().toISOString(),
     sourceRows:rows.length,
     genderComposition:{
      female:rows.filter(r=>r.gender===0).length,
@@ -532,5 +553,5 @@ export class BatchLab{
   <div class="batchMeasureMatrix"><b>Unbekannte Kontrollmaße dieser Variante</b>${BLIND_KEYS.map(k=>{const m=best.blindPerMeasure?.[k];return m&&m.n?`<span>${BLIND_LABELS[k]}: <strong>${m.mae.toFixed(2)} cm</strong> · P90 ${m.p90.toFixed(2)} cm · n=${m.n}</span>`:""}).join("")}</div>
   <div class="batchMeasureMatrix"><b>Top 5 nach Blind-MAE</b>${rows.slice(0,5).map((x,i)=>`<span>${i+1}. <strong>${x.blindMAE.toFixed(2)} cm</strong> · ${x.use.length+2} Angaben · ${x.use.length?x.use.map(k=>LABELS[k]).join(" + "):"nur Größe + Gewicht"}</span>`).join("")}</div>`;
  }
- export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.5.1-Batch-Report.json",JSON.stringify(this.results,null,2))}
+ export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.6.0-Batch-Report.json",JSON.stringify(this.results,null,2))}
 }

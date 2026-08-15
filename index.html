@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<title>Harness Body Lab v3.5.1</title>
+<title>Harness Body Lab v3.6.0</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
 {"imports":{
@@ -29,10 +29,11 @@ window.addEventListener("unhandledrejection",function(e){
 </head>
 <body>
 <div id="viewport">
-  <div id="badge">BODY LAB · v3.5.1</div>
+  <div id="badge">BODY LAB · v3.6.0</div>
   <div id="topActions">
     <button id="generatorToggle" disabled>Generator</button>
     <button id="batchToggle" disabled>Batch</button>
+    <button id="calibrationToggle" disabled>Calib</button>
     <button id="revisionToggle">Revision</button>
     <button id="debugToggle">Debug Test</button>
   </div>
@@ -103,6 +104,7 @@ window.addEventListener("unhandledrejection",function(e){
 
 <section id="generatorPanel" class="overlay generatorOverlay hidden"></section>
 <section id="batchPanel" class="overlay generatorOverlay hidden"></section>
+<section id="calibrationPanel" class="overlay generatorOverlay hidden"></section>
 <section id="debugPanel" class="overlay hidden"></section>
 <script type="module" src="./main.js"></script>
 </body>
