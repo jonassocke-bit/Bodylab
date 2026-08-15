@@ -172,6 +172,20 @@ export class BatchLab{
     Der Batch läuft ohne Normalenberechnung und stellt dein vorheriges Modell danach wieder her.
    </div>
 
+   <div class="generatorSectionTitle">QUESTIONNAIRE OPTIMIZER</div>
+   <div class="generatorGrid">
+    <label>Zielgenauigkeit
+     <select id="optTarget">
+      <option value="0.5">≤ 0,50 cm</option><option value="0.75">≤ 0,75 cm</option>
+      <option value="1" selected>≤ 1,00 cm</option><option value="1.5">≤ 1,50 cm</option><option value="2">≤ 2,00 cm</option>
+     </select>
+    </label>
+    <label>Optimieren nach
+     <select id="optMetric"><option value="fullMAE" selected>Gesamt-MAE</option><option value="holdoutMAE">Holdout-MAE</option></select>
+    </label>
+   </div>
+   <div class="generatorIntro compact">Nach einem 32-Kombinationen-Lauf sucht der Optimizer automatisch den kleinsten Fragebogen, der dein Fehlerziel erreicht.</div>
+   <div id="optimizerResults" class="batchResults"></div>
    <div class="generatorActions">
     <button id="batchRun" class="primary">Batch starten</button>
     <button id="batchAbort" disabled>Abbrechen</button>
@@ -190,6 +204,8 @@ export class BatchLab{
   this.panel.querySelector("#batchRun").onclick=()=>this.run();
   this.panel.querySelector("#batchAbort").onclick=()=>{this.abort=true};
   this.panel.querySelector("#batchExport").onclick=()=>this.export();
+  this.panel.querySelector("#optTarget").onchange=()=>this.renderOptimizer();
+  this.panel.querySelector("#optMetric").onchange=()=>this.renderOptimizer();
  }
  async loadANSUR(which){
   const buttons=["ansurFemale","ansurMale","ansurAll"].map(id=>this.panel.querySelector("#"+id));
@@ -342,8 +358,9 @@ export class BatchLab{
     });
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
-   this.results={build:"BODY LAB v3.2.2",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
+   this.results={build:"BODY LAB v3.3.0",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
    this.renderResults();
+   this.renderOptimizer();
    this.panel.querySelector("#batchExport").disabled=false;
   }catch(err){
    if(err.message!=="__ABORT__")console.error(err),alert("Batchfehler: "+(err.message||err));
@@ -378,5 +395,21 @@ export class BatchLab{
     }).join("")}
    </div>`;
  }
- export(){if(this.results)download("BodyLab-v3.2.2-Batch-Report.json",JSON.stringify(this.results,null,2))}
+ renderOptimizer(){
+  const box=this.panel?.querySelector("#optimizerResults"); if(!box)return;
+  if(!this.results){box.innerHTML='<div class="batchInfo">Noch kein Ergebnis vorhanden.</div>';return}
+  const target=Number(this.panel.querySelector("#optTarget").value),metric=this.panel.querySelector("#optMetric").value;
+  const rows=this.results.summary.filter(x=>Number.isFinite(x[metric]));
+  const bestByCount=[];
+  for(let n=0;n<=5;n++){const c=rows.filter(x=>x.use.length===n).sort((a,b)=>a[metric]-b[metric]);if(c.length)bestByCount.push(c[0])}
+  const qualifying=rows.filter(x=>x[metric]<=target).sort((a,b)=>a.use.length-b.use.length||a[metric]-b[metric]);
+  const winner=qualifying[0]||[...rows].sort((a,b)=>a[metric]-b[metric])[0],met=winner[metric]<=target;
+  const gains=bestByCount.map((x,i)=>({x,gain:i?bestByCount[i-1][metric]-x[metric]:null}));
+  const optional=["chest","waist","torso","hip","shoulder"];
+  const marginal=optional.map(k=>{const d=[];for(const a of rows){if(a.use.includes(k))continue;const key=[...a.use,k].sort().join("|"),q=rows.find(x=>[...x.use].sort().join("|")===key);if(q)d.push(a[metric]-q[metric])}return{k,n:d.length,avg:mean(d),median:percentile(d,.5)}}).filter(x=>x.n).sort((a,b)=>b.avg-a.avg);
+  box.innerHTML=`<div class="optimizerHero ${met?"hit":"miss"}"><small>${met?"KLEINSTER FRAGEBOGEN FÜR DAS ZIEL":"ZIEL NICHT ERREICHT · BESTE VARIANTE"}</small><strong>${winner.use.length+2} Angaben</strong><span>Größe · Gewicht${winner.use.length?" · "+winner.use.map(k=>LABELS[k]).join(" · "):""}</span><b>${winner[metric].toFixed(2)} cm</b></div>
+  <div class="batchMeasureMatrix"><b>Pareto-Pfad · beste Variante je Länge</b>${gains.map(g=>`<span>${g.x.use.length+2} Angaben: <strong>${g.x[metric].toFixed(2)} cm</strong> · ${g.x.use.length?g.x.use.map(k=>LABELS[k]).join(" + "):"nur Größe + Gewicht"}${g.gain!==null?` · Gewinn <strong>${g.gain.toFixed(2)} cm</strong>`:""}</span>`).join("")}</div>
+  <div class="batchMeasureMatrix"><b>Ø Grenznutzen einer zusätzlichen Messung</b>${marginal.map(x=>`<span>${LABELS[x.k]}: <strong>−${x.avg.toFixed(2)} cm</strong> · Median −${x.median.toFixed(2)} cm · ${x.n} Paarvergleiche</span>`).join("")}</div>`;
+ }
+ export(){if(!this.results)return;this.results.optimizer={targetCm:Number(this.panel.querySelector("#optTarget").value),metric:this.panel.querySelector("#optMetric").value};download("BodyLab-v3.3.0-Batch-Report.json",JSON.stringify(this.results,null,2))}
 }
