@@ -36,19 +36,81 @@ export class BodyUI{
   this.register("breastFirmness","Breast firmness",p,0,1,s.breastFirmness,()=>s.breastFirmness,v=>s.breastFirmness=v,{display:pct,overdrive:true});
  }
  buildAdvanced(){
-  if(this.groupsBuilt)return;this.groupsBuilt=true;let count=0;
+  if(this.groupsBuilt)return;
+  let count=0,fc=0;
   const host=document.getElementById("bodyGroups");
+  const fh=document.getElementById("faceGroups");
+
   for(const g of this.engine.groups||[]){
-   const d=document.createElement("details");d.className="group";const sum=document.createElement("summary"),t=document.createElement("span"),b=document.createElement("b"),body=document.createElement("div");body.className="groupBody";t.textContent=GROUP_LABELS[g.id]||this.humanize(g.id);b.textContent=g.controls.length;sum.append(t,b);d.append(sum,body);host.append(d);
-   for(const x of g.controls){this.engine.directState[x.id]=0;this.register(x.id,this.humanize(x.target),body,x.oneWay?0:-1,1,0,()=>this.engine.directState[x.id],v=>this.engine.directState[x.id]=v,{target:x.target,overdrive:true});count++}
+   if(!g || !Array.isArray(g.controls))continue;
+   const d=document.createElement("details");
+   d.className="group";
+   const sum=document.createElement("summary");
+   const t=document.createElement("span");
+   const b=document.createElement("b");
+   const groupBody=document.createElement("div");
+   groupBody.className="groupBody";
+   t.textContent=GROUP_LABELS[g.id]||this.humanize(g.id);
+   b.textContent=String(g.controls.length);
+   sum.append(t,b);
+   d.append(sum,groupBody);
+   host.append(d);
+
+   for(const x of g.controls){
+    if(!x || !x.id)continue;
+    try{
+     this.engine.directState[x.id]=0;
+     this.register(
+      x.id,this.humanize(x.target),groupBody,x.oneWay?0:-1,1,0,
+      ()=>this.engine.directState[x.id],
+      v=>this.engine.directState[x.id]=v,
+      {target:x.target,overdrive:true}
+     );
+     count++;
+    }catch(err){
+     console.warn("Body control skipped",x.id,err);
+    }
+   }
   }
-  const fh=document.getElementById("faceGroups");let fc=0;
+
   for(const g of this.engine.faceGroups||[]){
-   const d=document.createElement("details");d.className="group",sum=document.createElement("summary"),t=document.createElement("span"),b=document.createElement("b"),body=document.createElement("div");body.className="groupBody";t.textContent=this.humanize(g.id);b.textContent=g.controls.length;sum.append(t,b);d.append(sum,body);fh.append(d);
-   for(const x of g.controls){this.engine.faceState[x.id]=0;this.register(x.id,this.humanize(x.target),body,x.oneWay?0:-1,1,0,()=>this.engine.faceState[x.id],v=>this.engine.faceState[x.id]=v,{target:x.target,overdrive:true});fc++}
+   if(!g || !Array.isArray(g.controls))continue;
+   const d=document.createElement("details");
+   d.className="group";
+   const sum=document.createElement("summary");
+   const t=document.createElement("span");
+   const b=document.createElement("b");
+   const groupBody=document.createElement("div");
+   groupBody.className="groupBody";
+   t.textContent=this.humanize(g.id);
+   b.textContent=String(g.controls.length);
+   sum.append(t,b);
+   d.append(sum,groupBody);
+   fh.append(d);
+
+   for(const x of g.controls){
+    if(!x || !x.id)continue;
+    try{
+     this.engine.faceState[x.id]=0;
+     this.register(
+      x.id,this.humanize(x.target),groupBody,x.oneWay?0:-1,1,0,
+      ()=>this.engine.faceState[x.id],
+      v=>this.engine.faceState[x.id]=v,
+      {target:x.target,overdrive:true}
+     );
+     fc++;
+    }catch(err){
+     console.warn("Face control skipped",x.id,err);
+    }
+   }
   }
-  document.getElementById("advancedCount").textContent=count+" Body";document.getElementById("faceCount").textContent=fc;document.getElementById("controlCount").textContent=(this.registry.size)+" MakeHuman-Regler";
-  this.revision.applyLayout();this.bindSearch();
+
+  document.getElementById("advancedCount").textContent=count+" Body";
+  document.getElementById("faceCount").textContent=String(fc);
+  document.getElementById("controlCount").textContent=this.registry.size+" MakeHuman-Regler";
+  this.revision.applyLayout();
+  this.bindSearch();
+  this.groupsBuilt=true;
  }
  humanize(s){return String(s).replace(/^measure-/,"").replace(/-/g," ").replace(/\b\w/g,m=>m.toUpperCase())}
  updateMetrics(m){

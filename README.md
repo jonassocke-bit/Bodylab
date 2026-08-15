@@ -1,4 +1,4 @@
-# Harness Body Lab v3.0.0 — clean rewrite
+# Harness Body Lab v3.0.1 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
 
@@ -27,6 +27,9 @@ Each parameter can be classified as Main / Fine / Advanced, renamed, annotated, 
 and supplied with calibration/reference marks.
 
 ## Rig / poses
-The original MakeHuman default rig data is loaded and counted, but v3.0.0 deliberately does not
+The original MakeHuman default rig data is loaded and counted, but v3.0.1 deliberately does not
 apply the previously unreliable manual arm poses. Proper BVH / Mixamo retargeting will be added
 as a separately testable module after this clean baseline is validated.
+
+## v3.0.1 hotfix
+Fixed the strict-mode runtime error in the Face-group builder. Advanced group/control creation is now defensive so one malformed control cannot abort the whole boot.
