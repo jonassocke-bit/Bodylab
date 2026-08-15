@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+<meta name="theme-color" content="#101011">
+<title>Harness Body Lab v3.0.0</title>
+<link rel="stylesheet" href="./style.css">
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+}}
+</script>
+<script>
+window.addEventListener("error",function(e){
+  var box=document.getElementById("bootError");
+  if(!box)return;
+  box.classList.remove("hidden");
+  box.textContent="Startfehler: "+(e && e.message ? e.message : "JavaScript-Fehler");
+});
+window.addEventListener("unhandledrejection",function(e){
+  var box=document.getElementById("bootError"),r=e&&e.reason;
+  if(!box)return;
+  box.classList.remove("hidden");
+  box.textContent="Ladefehler: "+String(r && (r.message||r) || "unbekannt");
+});
+</script>
+</head>
+<body>
+<div id="viewport">
+  <div id="badge">BODY LAB · v3.0.0</div>
+  <div id="topActions">
+    <button id="revisionToggle">Revision</button>
+    <button id="debugToggle">Debug Test</button>
+  </div>
+  <div id="loadCard">
+    <span class="spinner"></span>
+    <div><strong id="loadTitle">Body Lab startet …</strong><small id="loadDetail">App-Shell</small></div>
+  </div>
+  <div id="bootError" class="errorCard hidden"></div>
+</div>
+
+<section id="sheet">
+  <div id="handle"><span></span></div>
+  <div id="sheetScroll">
+    <header>
+      <div><h1>Körperparameter</h1><p id="controlCount">Basis lädt …</p></div>
+      <button id="resetBtn">Reset</button>
+    </header>
+
+    <div class="sectionLabel">AUSGANGSPRESET</div>
+    <div id="builtInPresets" class="chips"></div>
+    <div class="presetSave">
+      <input id="presetName" type="text" placeholder="Eigenes Preset benennen …">
+      <button id="presetSaveBtn">Speichern</button>
+    </div>
+    <div id="userPresets" class="chips"></div>
+
+    <div class="sectionLabel">BASIS</div>
+    <div id="coreControls" class="panel"></div>
+    <div id="stats" class="stats">
+      <span>Größe <b id="statHeight">–</b></span>
+      <span>Gewicht <b id="statWeight">–</b></span>
+      <span>Oberfläche <b id="statBsa">–</b></span>
+      <span>Volumen <b id="statVolume">–</b></span>
+    </div>
+
+    <div id="mainExtraSection" class="hidden">
+      <div class="sectionLabel">WEITERE HAUPTPARAMETER</div>
+      <div id="mainExtraControls" class="panel"></div>
+    </div>
+
+    <details id="fineSection" class="tierSection hidden" open>
+      <summary><span>Feinanpassung</span><b id="fineCount">0</b></summary>
+      <div id="fineControls" class="panel"></div>
+    </details>
+
+    <details id="poseSection" class="tierSection">
+      <summary><span>Pose Lab</span><b id="rigStatus">nicht geladen</b></summary>
+      <div class="posePanel">
+        <p>Rig wird als Grundlage geladen. Posen bleiben in V3 zunächst neutral, bis BVH-Retargeting separat validiert ist.</p>
+        <button id="neutralPoseBtn">Neutral / Rig zurücksetzen</button>
+      </div>
+    </details>
+
+    <details id="advancedSection" class="tierSection">
+      <summary><span>Advanced</span><b id="advancedCount">lädt …</b></summary>
+      <div class="advancedTools">
+        <input id="searchInput" type="search" placeholder="Parameter suchen …">
+        <button id="openAllBtn">Alle öffnen</button>
+      </div>
+      <div id="bodyGroups"></div>
+      <details class="group">
+        <summary><span>Face / Head</span><b id="faceCount">–</b></summary>
+        <div id="faceGroups"></div>
+      </details>
+    </details>
+  </div>
+</section>
+
+<section id="debugPanel" class="overlay hidden"></section>
+<script type="module" src="./main.js"></script>
+</body>
+</html>

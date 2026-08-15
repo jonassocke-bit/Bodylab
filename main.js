@@ -1,0 +1,40 @@
+
+import {BodyEngine} from "./engine.js";
+import {BodyUI} from "./ui.js";
+import {setupDebug} from "./debug.js";
+
+const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
+function progress(a,b){title.textContent=a;detail.textContent=b||""}
+
+async function boot(){
+ const engine=new BodyEngine(document.getElementById("viewport"),progress);
+ const ui=new BodyUI(engine);
+ setupDebug();
+
+ await engine.loadBase();
+ progress("Körper sichtbar","Grundmodell bereit");
+ await new Promise(r=>setTimeout(r,60));
+
+ await engine.loadMacroStack();
+ engine.updateBody();
+
+ await engine.loadAdvancedData();
+ ui.buildAdvanced();
+ ui.sync();
+
+ const bones=await engine.loadRig();
+ document.getElementById("rigStatus").textContent=bones+" Bones geladen";
+
+ engine.computeMetrics();
+ progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
+ setTimeout(()=>card.classList.add("hidden"),500);
+
+ window.BodyLab={engine,ui};
+}
+boot().catch(err=>{
+ console.error(err);
+ title.textContent="Ladefehler";
+ detail.textContent=String(err&&err.message||err);
+ document.getElementById("bootError").classList.remove("hidden");
+ document.getElementById("bootError").textContent=String(err&&err.stack||err);
+});

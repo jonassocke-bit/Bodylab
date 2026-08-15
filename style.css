@@ -1,0 +1,58 @@
+
+*{box-sizing:border-box}
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif}
+html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#101011;color:#f4f4f5}
+button,input,select,textarea{font:inherit}
+button{border:0;border-radius:11px;background:#303034;color:#f5f5f6;padding:9px 12px;font-weight:650}
+.hidden{display:none!important}
+#viewport{position:absolute;inset:0;background:radial-gradient(circle at 50% 35%,#242426 0,#171719 50%,#101011 100%);overflow:hidden}
+#viewport canvas{position:absolute;inset:0;width:100%!important;height:100%!important;touch-action:none}
+#badge{position:absolute;z-index:5;left:26px;top:max(18px,env(safe-area-inset-top));font-size:10px;letter-spacing:.16em;color:#aaa;background:rgba(14,14,16,.56);padding:9px 11px;border-radius:10px}
+#topActions{position:absolute;z-index:5;right:20px;top:max(15px,env(safe-area-inset-top));display:flex;gap:7px}
+#topActions button{font-size:10px;background:rgba(24,24,27,.72);border:1px solid rgba(255,255,255,.12)}
+#topActions button.active{background:#eee;color:#111}
+#loadCard,.errorCard{position:absolute;z-index:7;top:max(62px,calc(env(safe-area-inset-top) + 48px));left:50%;transform:translateX(-50%);display:flex;gap:9px;align-items:center;background:rgba(20,20,23,.88);padding:10px 13px;border-radius:13px;min-width:210px}
+#loadCard strong,#loadCard small{display:block}#loadCard strong{font-size:11px}#loadCard small{font-size:9px;color:#999;margin-top:2px}
+.spinner{width:15px;height:15px;border:2px solid #555;border-top-color:#ddd;border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.errorCard{color:#ffd1d1;font-size:10px;border:1px solid rgba(255,80,80,.25)}
+
+#sheet{--sheetTop:52vh;position:absolute;z-index:4;left:0;right:0;top:var(--sheetTop);bottom:0;background:rgba(16,16,18,.96);border-radius:22px 22px 0 0;border-top:1px solid rgba(255,255,255,.12);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);overflow:hidden}
+#handle{height:36px;display:flex;align-items:center;justify-content:center;touch-action:none}
+#handle span{width:44px;height:5px;border-radius:5px;background:#8b8b90}
+#sheetScroll{height:calc(100% - 36px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;padding:0 14px calc(26px + env(safe-area-inset-bottom))}
+header{display:flex;align-items:flex-start;justify-content:space-between;padding:5px 0 12px}header h1{font-size:22px;margin:0}header p{font-size:9px;color:#888;margin:4px 0 0}
+.sectionLabel{font-size:8px;letter-spacing:.16em;color:#777;margin:9px 1px 6px}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:7px}.chips::-webkit-scrollbar{display:none}.chips button{font-size:9px;white-space:nowrap;padding:8px 9px}
+.presetSave{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:4px}.presetSave input,.advancedTools input{min-width:0;border:1px solid rgba(255,255,255,.1);background:#28282c;color:#fff;border-radius:9px;padding:8px;font-size:10px}
+
+.panel{background:rgba(255,255,255,.025);border-radius:13px;overflow:hidden}
+.controlWrap{width:100%;border-bottom:1px solid rgba(255,255,255,.035)}
+.controlWrap:last-child{border-bottom:0}
+.controlRow{display:flex;align-items:center;width:100%;min-width:0;gap:7px;padding:8px 9px}
+.controlRow .controlLabel{flex:0 0 104px;min-width:0;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.controlRow input[type=range]{flex:1 1 auto;min-width:0;width:0}
+.valueBox{flex:0 0 60px;width:60px;min-width:60px;text-align:right;overflow:hidden}
+.techValue{display:block;width:100%;padding:0;border:0;background:transparent;font-size:8px;text-align:right;white-space:nowrap;overflow:hidden}
+.realValue{display:block;width:100%;font-size:7px;color:#929298;line-height:1.15;white-space:nowrap;overflow:hidden;text-align:right}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px;padding:9px 3px;margin-top:4px;border-top:1px solid rgba(255,255,255,.06)}.stats span{font-size:8px;color:#85858c}.stats b{float:right;color:#ddd}
+
+.tierSection{border-top:1px solid rgba(255,255,255,.08);margin-top:9px}.tierSection>summary,.group>summary{display:flex;justify-content:space-between;align-items:center;padding:11px 2px;font-size:11px;font-weight:650}.tierSection>summary b,.group>summary b{font-size:8px;color:#777;font-weight:500}
+.advancedTools{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:8px}.advancedTools button{font-size:9px}
+.group{border-top:1px solid rgba(255,255,255,.04)}.groupBody{background:rgba(255,255,255,.018);border-radius:10px;overflow:hidden}
+.posePanel{padding:0 4px 10px}.posePanel p{font-size:9px;line-height:1.45;color:#999}.posePanel button{font-size:9px}
+
+.revisionRow{display:none;padding:7px 9px 9px;background:rgba(255,255,255,.025);border-top:1px solid rgba(255,255,255,.045)}
+body.revisionMode .revisionRow{display:block}
+.revisionGrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.revisionRow label{display:block;font-size:7px;color:#8c8c92;margin-bottom:6px}
+.revisionRow input,.revisionRow select,.revisionRow textarea{display:block;width:100%;margin-top:3px;border:1px solid rgba(255,255,255,.08);background:#242427;color:#fff;border-radius:7px;padding:6px;font-size:8px}
+.revisionRow textarea{min-height:38px;resize:vertical}
+.revisionAuto{font-size:7px;color:#aaa;background:#18181a;border-radius:7px;padding:6px;margin-bottom:6px}
+.revisionButtons{display:flex;gap:6px;flex-wrap:wrap}.revisionButtons button{font-size:8px;padding:6px 8px}
+
+.overlay{position:absolute;z-index:20;left:10px;right:10px;top:max(56px,calc(env(safe-area-inset-top) + 44px));max-height:calc(100dvh - 72px - env(safe-area-inset-bottom));overflow:auto;background:rgba(19,19,22,.97);border:1px solid rgba(255,255,255,.13);border-radius:17px;padding:12px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+.debugHead{display:flex;justify-content:space-between;align-items:flex-start}.debugHead strong,.debugHead small{display:block}.debugHead strong{font-size:11px}.debugHead small{font-size:8px;color:#888;margin-top:3px}
+.debugQ{font-size:16px;margin:9px 0 6px}.debugText{font-size:10px;color:#aaa;line-height:1.45}
+.debugStatuses{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0}.debugStatuses button{font-size:9px}.debugStatuses button.active{background:#eee;color:#111}
+.debugComment{width:100%;min-height:70px;background:#28282c;border:1px solid rgba(255,255,255,.09);color:#fff;border-radius:9px;padding:8px;font-size:10px;resize:vertical}
+.debugNav{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}

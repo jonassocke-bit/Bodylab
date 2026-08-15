@@ -1,0 +1,1 @@
+export const GROUP_LABELS={"neck": "Hals", "torso": "Torso", "hip": "H\u00fcfte", "stomach": "Bauch", "buttocks": "Ges\u00e4\u00df", "pelvis": "Becken", "armslegs": "Arme \u00b7 Beine \u00b7 H\u00e4nde \u00b7 F\u00fc\u00dfe", "breast": "Brust \u2013 Detailform", "genitals": "Anatomie \u2013 Genitalbereich", "measure": "K\u00f6rperma\u00dfe", "bodyshapes": "Body-Shape Targets"};
