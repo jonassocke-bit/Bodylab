@@ -15,7 +15,12 @@ const SCENARIOS=[
 
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"}[c]))}
 function norm(s){return String(s??"").toLowerCase().trim().replace(/[ä]/g,"ae").replace(/[ö]/g,"oe").replace(/[ü]/g,"ue").replace(/[ß]/g,"ss").replace(/[^a-z0-9]+/g,"_").replace(/^_|_$/g,"")}
-function num(v){const n=Number(String(v??"").trim().replace(",","."));return Number.isFinite(n)?n:null}
+function num(v){
+ const raw=String(v??"").trim();
+ if(raw==="")return null;
+ const n=Number(raw.replace(",","."));
+ return Number.isFinite(n)?n:null;
+}
 function mean(a){return a.length?a.reduce((s,x)=>s+x,0)/a.length:NaN}
 function rmse(a){return a.length?Math.sqrt(a.reduce((s,x)=>s+x*x,0)/a.length):NaN}
 function percentile(a,p){if(!a.length)return NaN;const b=[...a].sort((x,y)=>x-y),i=(b.length-1)*p,lo=Math.floor(i),hi=Math.ceil(i);return b[lo]+(b[hi]-b[lo])*(i-lo)}
@@ -262,7 +267,7 @@ export class BatchLab{
     });
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
-   this.results={build:"BODY LAB v3.2.0",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
+   this.results={build:"BODY LAB v3.2.1",createdAt:new Date().toISOString(),sourceRows:rows.length,scenarioCount:scenarios.length,summary,raw};
    this.renderResults();
    this.panel.querySelector("#batchExport").disabled=false;
   }catch(err){
@@ -298,5 +303,5 @@ export class BatchLab{
     }).join("")}
    </div>`;
  }
- export(){if(this.results)download("BodyLab-v3.2-Batch-Report.json",JSON.stringify(this.results,null,2))}
+ export(){if(this.results)download("BodyLab-v3.2.1-Batch-Report.json",JSON.stringify(this.results,null,2))}
 }

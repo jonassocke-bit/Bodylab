@@ -1,4 +1,4 @@
-# Harness Body Lab v3.2.0 — clean rewrite
+# Harness Body Lab v3.2.1 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
 
@@ -27,15 +27,15 @@ Each parameter can be classified as Main / Fine / Advanced, renamed, annotated, 
 and supplied with calibration/reference marks.
 
 ## Rig / poses
-The original MakeHuman default rig data is loaded and counted, but v3.2.0 deliberately does not
+The original MakeHuman default rig data is loaded and counted, but v3.2.1 deliberately does not
 apply the previously unreliable manual arm poses. Proper BVH / Mixamo retargeting will be added
 as a separately testable module after this clean baseline is validated.
 
-## v3.2.0 hotfix
+## v3.2.1 hotfix
 Fixed the strict-mode runtime error in the Face-group builder. Advanced group/control creation is now defensive so one malformed control cannot abort the whole boot.
 
 
-## v3.2.0 — Measurement Lab
+## v3.2.1 — Measurement Lab
 
 Adds the first user-facing body generator.
 
@@ -65,7 +65,7 @@ The solver uses the original MakeHuman measurement morphs and allows internal di
 extrapolation to ±180% while the core height/weight macros remain inside their native 0–100% range.
 
 
-## v3.2.0 — Landmark Calibration
+## v3.2.1 — Landmark Calibration
 
 Replaces the two V3.1 measurement proxies that produced the large first-test errors.
 
@@ -89,7 +89,7 @@ The generator also adds a coupled stabilization loop so torso-length changes no 
 height/weight at the values produced by a later morph.
 
 
-## v3.2.0 — Batch Lab
+## v3.2.1 — Batch Lab
 
 Adds CSV/JSON dataset import and automated questionnaire comparison.
 
@@ -116,3 +116,13 @@ Keeping both avoids the methodological trap of making a larger questionnaire loo
 For iPhone performance, start with 10–25 rows. The batch runner disables normal recalculation during
 optimization, uses fewer stabilization passes than the interactive generator, and restores the user's
 previous visible body after the batch completes.
+
+
+## v3.2.1 — CSV blank-value hotfix
+
+Important correctness fix:
+empty numeric CSV cells are now imported as `null` / unavailable rather than JavaScript numeric zero.
+
+V3.2.0 therefore incorrectly treated an empty `underbust` cell as a real 0 cm reference
+measurement. This could add roughly 80–100 cm of error per person and made the first batch
+ranking meaningless. Re-run the same CSV after installing V3.2.1.
