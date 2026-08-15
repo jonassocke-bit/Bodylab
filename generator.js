@@ -79,7 +79,7 @@ export class MeasurementLab{
    <div class="measureCards">
     ${this.measureCard("genBust","Brustumfang","Um die stärkste Stelle von Brust/Brustkorb, Maßband waagerecht und nicht einschnüren.","cm",true)}
     ${this.measureCard("genWaist","Taillenumfang","An der natürlichen Taille messen; entspannt stehen und normal ausatmen.","cm",true)}
-    ${this.measureCard("genTorso","Schulter → Schritt","Vom Schulter-/Halsansatz entlang des Torsos bis zum Schritt. Für unsere erste Kalibrierung nutzen wir im Mesh die kombinierte MakeHuman-Torsolänge als Proxy.","cm",true)}
+    ${this.measureCard("genTorso","Schulter → Schritt","Vertikale Höhe vom äußeren Schulterpunkt bis zum Schritt/Inseam. V3.1.1 misst das direkt über feste MakeHuman-Mesh-Landmarks.","cm",true)}
    </div>
 
    <div class="generatorSectionTitle">OPTIONALE KONTROLLMASSE</div>
@@ -90,11 +90,12 @@ export class MeasurementLab{
    <div class="measureCards">
     ${this.optionalCard("genHip","Hüftumfang","Stärkste Stelle über Hüfte/Gesäß.","measure-hips-circ")}
     ${this.optionalCard("genUnderbust","Unterbrustumfang","Direkt unter der Brust, horizontal.","measure-underbust-circ")}
-    ${this.optionalCard("genShoulder","Schulterbreite","Gerade Strecke zwischen den äußeren Schulterpunkten. Dieser MakeHuman-Messpfad muss noch gegen reale Messung kalibriert werden.","measure-shoulder-dist")}
+    ${this.optionalCard("genShoulder","Schulterbreite","Gerade 3D-Strecke zwischen den äußeren Schulterpunkten. V3.1.1 verwendet dafür zwei feste, symmetrische MakeHuman-Mesh-Landmarks.","measure-shoulder-dist")}
    </div>
 
    <div class="generatorActions">
     <button id="genRun" class="primary">Modell generieren</button>
+    <button id="genLandmarks">Messpunkte anzeigen</button>
     <button id="genSaveProfile">Testprofil speichern</button>
     <button id="genExport" disabled>Report exportieren</button>
    </div>
@@ -103,6 +104,10 @@ export class MeasurementLab{
   `;
   this.panel.querySelector("#genClose").onclick=()=>this.panel.classList.add("hidden");
   this.panel.querySelector("#genRun").onclick=()=>this.run();
+  this.panel.querySelector("#genLandmarks").onclick=()=>{
+   const visible=this.engine.toggleLandmarks();
+   this.panel.querySelector("#genLandmarks").textContent=visible?"Messpunkte ausblenden":"Messpunkte anzeigen";
+  };
   this.panel.querySelector("#genSaveProfile").onclick=()=>this.saveProfile();
   this.panel.querySelector("#genExport").onclick=()=>this.exportReport();
  }
@@ -154,7 +159,8 @@ export class MeasurementLab{
  metric(name){
   if(name==="height")return this.engine.heightCm();
   if(name==="weight")return this.engine.weightKg();
-  if(name==="torso")return this.engine.torsoProxyCm();
+  if(name==="torso")return this.engine.shoulderToCrotchCm();
+  if(name==="shoulder")return this.engine.shoulderBreadthCm();
   return this.engine.getMeasureCm(name);
  }
  async solveCore(prop,target,metricName,min=0,max=1){
@@ -202,23 +208,46 @@ export class MeasurementLab{
   const a=this.controlByTarget.get("measure-napetowaist-dist");
   const b=this.controlByTarget.get("measure-waisttohip-dist");
   if(!a||!b)return {ok:false,reason:"Torso-Regler fehlen"};
-  let v=((this.engine.directState[a]||0)+(this.engine.directState[b]||0))/2;
+  let v=((Number(this.engine.directState[a])||0)+(Number(this.engine.directState[b])||0))/2;
   const min=-1.8,max=1.8;
-  for(let iter=0;iter<3;iter++){
+  for(let iter=0;iter<4;iter++){
    this.engine.directState[a]=v;this.engine.directState[b]=v;
    this.engine.updateBody({normals:false,metrics:false});
-   const cur=this.metric("torso");
-   if(Math.abs(cur-targetCm)<.15)break;
-   let probe=clamp(v+(cur<targetCm?.22:-.22),min,max);
-   if(Math.abs(probe-v)<.001)probe=clamp(v+(cur<targetCm?-.22:.22),min,max);
+   const cur=this.engine.shoulderToCrotchCm();
+   if(Math.abs(cur-targetCm)<.12)break;
+   let probe=clamp(v+(cur<targetCm?.16:-.16),min,max);
+   if(Math.abs(probe-v)<.001)probe=clamp(v+(cur<targetCm?-.16:.16),min,max);
    this.engine.directState[a]=probe;this.engine.directState[b]=probe;
    this.engine.updateBody({normals:false,metrics:false});
-   const pm=this.metric("torso"),slope=(pm-cur)/(probe-v||1);
+   const pm=this.engine.shoulderToCrotchCm(),slope=(pm-cur)/(probe-v||1);
    if(!Number.isFinite(slope)||Math.abs(slope)<.02){v=probe;continue}
    v=clamp(v+(targetCm-cur)/slope,min,max);
   }
   this.engine.directState[a]=v;this.engine.directState[b]=v;
   return {ok:true,value:v};
+ }
+ async solveShoulder(targetCm){
+  // MakeHuman's shoulder-distance morph moves the outer shoulder vertices symmetrically.
+  // We drive that morph, but measure the true L↔R landmark breadth.
+  const id=this.controlByTarget.get("measure-shoulder-dist");
+  if(!id)return {ok:false,reason:"Schulter-Regler fehlt"};
+  let v=Number(this.engine.directState[id]||0);
+  const min=-1.8,max=1.8;
+  for(let iter=0;iter<4;iter++){
+   this.engine.directState[id]=v;
+   this.engine.updateBody({normals:false,metrics:false});
+   const cur=this.engine.shoulderBreadthCm();
+   if(Math.abs(cur-targetCm)<.12)break;
+   let probe=clamp(v+(cur<targetCm?.2:-.2),min,max);
+   if(Math.abs(probe-v)<.001)probe=clamp(v+(cur<targetCm?-.2:.2),min,max);
+   this.engine.directState[id]=probe;
+   this.engine.updateBody({normals:false,metrics:false});
+   const pm=this.engine.shoulderBreadthCm(),slope=(pm-cur)/(probe-v||1);
+   if(!Number.isFinite(slope)||Math.abs(slope)<.02){v=probe;continue}
+   v=clamp(v+(targetCm-cur)/slope,min,max);
+  }
+  this.engine.directState[id]=v;
+  return {ok:true,id,value:v};
  }
  async run(){
   const v=this.getInput();
@@ -226,33 +255,48 @@ export class MeasurementLab{
   const runBtn=this.panel.querySelector("#genRun");
   runBtn.disabled=true;
   try{
-   await this.tick("1 / 5 · Grundkörper","Alter, Körperbasis und Körperbau");
+   await this.tick("1 / 6 · Grundkörper","Alter, Körperbasis und Körperbau");
    this.engine.reset();
    this.engine.state.gender=v.gender;
    this.engine.state.age=clamp(this.ageToSlider(v.age),0,1);
    this.engine.state.muscle=clamp(v.build,0,1);
    this.engine.updateBody({normals:false,metrics:false});
 
-   await this.tick("2 / 5 · Körpergröße","MakeHuman Height wird auf "+v.height.toFixed(1)+" cm optimiert");
+   await this.tick("2 / 6 · Basismaße","Größe und Gewicht");
    await this.solveCore("height",v.height,"height",0,1);
-
-   await this.tick("3 / 5 · Gewicht","MakeHuman Weight wird auf ca. "+v.weight.toFixed(1)+" kg optimiert");
    await this.solveCore("weight",v.weight,"weight",0,1);
 
-   await this.tick("4 / 5 · Torso","Brust, Taille und Torsohöhe");
+   await this.tick("3 / 6 · Torso-Umfänge","Brust und Taille");
    await this.solveDirect("measure-bust-circ",v.bust);
    await this.solveDirect("measure-waist-circ",v.waist);
+
+   await this.tick("4 / 6 · Landmark-Torso","Schulter → Schritt wird direkt am Mesh gemessen");
    await this.solveTorso(v.torso);
 
-   await this.tick("5 / 5 · Optionale Maße","Nur aktivierte Kontrollmaße beeinflussen das Modell");
+   await this.tick("5 / 6 · Optionale Maße","Nur aktivierte Kontrollmaße beeinflussen das Modell");
    if(v.useHip && v.hip)await this.solveDirect("measure-hips-circ",v.hip);
    if(v.useUnderbust && v.underbust)await this.solveDirect("measure-underbust-circ",v.underbust);
-   if(v.useShoulder && v.shoulder)await this.solveDirect("measure-shoulder-dist",v.shoulder);
+   if(v.useShoulder && v.shoulder)await this.solveShoulder(v.shoulder);
 
-   // One corrective pass because torso morphs influence each other.
+   // Coupled stabilization: later torso morphs also alter height, surface and circumference.
+   // Re-solve all required constraints several times rather than letting the last slider win.
+   for(let pass=1;pass<=4;pass++){
+    await this.tick("6 / 6 · Stabilisieren","Gemeinsame Iteration "+pass+" / 4");
+    await this.solveCore("height",v.height,"height",0,1);
+    await this.solveCore("weight",v.weight,"weight",0,1);
+    await this.solveDirect("measure-bust-circ",v.bust);
+    await this.solveDirect("measure-waist-circ",v.waist);
+    await this.solveTorso(v.torso);
+    if(v.useHip && v.hip)await this.solveDirect("measure-hips-circ",v.hip);
+    if(v.useUnderbust && v.underbust)await this.solveDirect("measure-underbust-circ",v.underbust);
+    if(v.useShoulder && v.shoulder)await this.solveShoulder(v.shoulder);
+   }
+
+   // Final height/weight correction, then one very small circumference correction.
+   await this.solveCore("height",v.height,"height",0,1);
+   await this.solveCore("weight",v.weight,"weight",0,1);
    await this.solveDirect("measure-bust-circ",v.bust);
    await this.solveDirect("measure-waist-circ",v.waist);
-   if(v.useHip && v.hip)await this.solveDirect("measure-hips-circ",v.hip);
 
    this.engine.updateBody();
    this.ui.sync();
@@ -274,10 +318,10 @@ export class MeasurementLab{
    weight:this.engine.weightKg(),
    bust:this.engine.getMeasureCm("measure-bust-circ"),
    waist:this.engine.getMeasureCm("measure-waist-circ"),
-   torso:this.engine.torsoProxyCm(),
+   torso:this.engine.shoulderToCrotchCm(),
    hip:this.engine.getMeasureCm("measure-hips-circ"),
    underbust:this.engine.getMeasureCm("measure-underbust-circ"),
-   shoulder:this.engine.getMeasureCm("measure-shoulder-dist")
+   shoulder:this.engine.shoulderBreadthCm()
   };
  }
  makeReport(v){
@@ -287,19 +331,20 @@ export class MeasurementLab{
    {key:"weight",label:"Gewicht",target:v.weight,actual:o.weight,used:true,unit:"kg"},
    {key:"bust",label:"Brustumfang",target:v.bust,actual:o.bust,used:true,unit:"cm"},
    {key:"waist",label:"Taillenumfang",target:v.waist,actual:o.waist,used:true,unit:"cm"},
-   {key:"torso",label:"Schulter → Schritt",target:v.torso,actual:o.torso,used:true,unit:"cm",proxy:true}
+   {key:"torso",label:"Schulter → Schritt",target:v.torso,actual:o.torso,used:true,unit:"cm",landmark:true}
   ];
   if(v.hip)rows.push({key:"hip",label:"Hüftumfang",target:v.hip,actual:o.hip,used:v.useHip,unit:"cm"});
   if(v.underbust)rows.push({key:"underbust",label:"Unterbrustumfang",target:v.underbust,actual:o.underbust,used:v.useUnderbust,unit:"cm"});
-  if(v.shoulder)rows.push({key:"shoulder",label:"Schulterbreite",target:v.shoulder,actual:o.shoulder,used:v.useShoulder,unit:"cm",calibration:true});
+  if(v.shoulder)rows.push({key:"shoulder",label:"Schulterbreite",target:v.shoulder,actual:o.shoulder,used:v.useShoulder,unit:"cm",landmark:true});
   this.lastReport={
-   build:"BODY LAB v3.1.0",
+   build:"BODY LAB v3.1.1",
    createdAt:new Date().toISOString(),
    inputs:v,rows,
    state:this.engine.snapshot(),
    notes:{
-    torso:"V3.1 verwendet als Mesh-Proxy measure-napetowaist-dist + measure-waisttohip-dist.",
-    shoulder:"MakeHuman measure-shoulder-dist wird noch gegen die reale Selbstmessmethode kalibriert.",
+    landmarks:"V3.1.1: shoulderL=1602, shoulderR=8274, crotch=4376.",
+    torso:"Vertikale Y-Differenz zwischen mittlerer Schulterhöhe und Crotch-Landmark.",
+    shoulder:"Direkte 3D-Distanz zwischen linkem und rechtem Shoulder-Landmark.",
     weight:"Gewicht ist der MakeHuman-artige Mesh/BSA-Schätzwert der App."
    }
   };
@@ -311,7 +356,7 @@ export class MeasurementLab{
    const cls=ae<=.5?"good":ae<=1.5?"okay":"warn";
    const kind=x.used?"INPUT":"KONTROLLE";
    return `<div class="resultRow ${cls}">
-    <div><strong>${esc(x.label)}</strong><small>${kind}${x.proxy?" · PROXY":""}${x.calibration?" · KALIBRIEREN":""}</small></div>
+    <div><strong>${esc(x.label)}</strong><small>${kind}${x.landmark?" · LANDMARK":""}</small></div>
     <span>${x.target.toFixed(1)} ${x.unit}</span>
     <span>${x.actual.toFixed(1)} ${x.unit}</span>
     <b>${err>=0?"+":""}${err.toFixed(1)}</b>
@@ -338,7 +383,7 @@ export class MeasurementLab{
   if(!this.lastReport)return;
   const blob=new Blob([JSON.stringify(this.lastReport,null,2)],{type:"application/json"});
   const u=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=u;a.download="Body-Lab-v3.1-Measurement-Report.json";a.click();
+  a.href=u;a.download="Body-Lab-v3.1.1-Measurement-Report.json";a.click();
   setTimeout(()=>URL.revokeObjectURL(u),1000);
  }
 }

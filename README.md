@@ -1,4 +1,4 @@
-# Harness Body Lab v3.1.0 — clean rewrite
+# Harness Body Lab v3.1.1 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
 
@@ -27,15 +27,15 @@ Each parameter can be classified as Main / Fine / Advanced, renamed, annotated, 
 and supplied with calibration/reference marks.
 
 ## Rig / poses
-The original MakeHuman default rig data is loaded and counted, but v3.1.0 deliberately does not
+The original MakeHuman default rig data is loaded and counted, but v3.1.1 deliberately does not
 apply the previously unreliable manual arm poses. Proper BVH / Mixamo retargeting will be added
 as a separately testable module after this clean baseline is validated.
 
-## v3.1.0 hotfix
+## v3.1.1 hotfix
 Fixed the strict-mode runtime error in the Face-group builder. Advanced group/control creation is now defensive so one malformed control cannot abort the whole boot.
 
 
-## v3.1.0 — Measurement Lab
+## v3.1.1 — Measurement Lab
 
 Adds the first user-facing body generator.
 
@@ -63,3 +63,27 @@ used to calibrate the mapping instead of pretending the two definitions are alre
 
 The solver uses the original MakeHuman measurement morphs and allows internal direct-morph
 extrapolation to ±180% while the core height/weight macros remain inside their native 0–100% range.
+
+
+## v3.1.1 — Landmark Calibration
+
+Replaces the two V3.1 measurement proxies that produced the large first-test errors.
+
+Fixed MakeHuman topology landmarks:
+- left shoulder: vertex 1602
+- right shoulder: vertex 8274
+- crotch / inseam center: vertex 4376
+
+Definitions:
+- Shoulder breadth = direct 3D distance L shoulder ↔ R shoulder.
+- Shoulder-to-crotch = vertical Y difference between the average shoulder height and crotch.
+
+These vertices were selected from the MakeHuman base topology. The shoulder vertices are the
+mirrored outer endpoints of MakeHuman's existing shoulder measurement; the crotch vertex is the
+center seam at the inseam. Because MakeHuman morphs preserve topology, the IDs remain valid while
+the body changes.
+
+The Measurement Lab can display the three landmarks directly on the live mesh.
+
+The generator also adds a coupled stabilization loop so torso-length changes no longer leave
+height/weight at the values produced by a later morph.

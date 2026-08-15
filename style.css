@@ -109,3 +109,5 @@ body.revisionMode .revisionRow{display:block}
  .generatorGrid{grid-template-columns:1fr}
  .resultHeader,.resultRow{grid-template-columns:minmax(100px,1.4fr) .72fr .72fr .45fr}
 }
+
+#genLandmarks{border:1px solid rgba(255,255,255,.13)}

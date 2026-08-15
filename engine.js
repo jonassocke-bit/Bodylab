@@ -4,6 +4,10 @@ import {OrbitControls} from "three/addons/controls/OrbitControls.js";
 import {MEASURE_RULERS} from "./measurements.js";
 
 const N=13380;
+// Stable MakeHuman base-mesh landmarks (topology is invariant under morphing).
+// L/R shoulder are the outer endpoint of MakeHuman's shoulder measurement on each side.
+// Crotch is the center seam vertex at the inseam.
+const LANDMARKS={shoulderL:1602,shoulderR:8274,crotch:4376};
 export class BodyEngine{
  constructor(viewport,onProgress){
   this.viewport=viewport;this.onProgress=onProgress||function(){};
@@ -25,6 +29,8 @@ export class BodyEngine{
   this.rig=null;this.skeleton=null;this.bones=new Map();
   this.metrics={};
   this.metricTimer=null;
+  this.landmarkMarkers=null;
+  this.landmarksVisible=false;
   this.renderer.setAnimationLoop(()=>{this.orbit.update();this.renderer.render(this.scene,this.camera)});
   addEventListener("resize",()=>this.resize());
  }
@@ -122,6 +128,7 @@ export class BodyEngine{
   const p=this.body.geometry.attributes.position;p.array.set(out);p.needsUpdate=true;
   if(doNormals)this.body.geometry.computeVertexNormals();
   this.body.geometry.computeBoundingBox();this.body.geometry.computeBoundingSphere();
+  if(this.landmarkMarkers)this.updateLandmarkMarkers();
   if(doMetrics){clearTimeout(this.metricTimer);this.metricTimer=setTimeout(()=>this.computeMetrics(),100)}
  }
  measure(indices){
@@ -129,6 +136,60 @@ export class BodyEngine{
   for(const vi of indices){const i=prev*3,j=vi*3;total+=Math.hypot(a[i]-a[j],a[i+1]-a[j+1],a[i+2]-a[j+2]);prev=vi}
   return total*100;
  }
+ vertexXYZ(index){
+  const a=this.body?.geometry?.attributes?.position?.array;
+  if(!a)return null;
+  const i=index*3;
+  return {x:a[i],y:a[i+1],z:a[i+2]};
+ }
+ shoulderBreadthCm(){
+  const l=this.vertexXYZ(LANDMARKS.shoulderL),r=this.vertexXYZ(LANDMARKS.shoulderR);
+  if(!l||!r)return NaN;
+  return Math.hypot(l.x-r.x,l.y-r.y,l.z-r.z)*100;
+ }
+ shoulderToCrotchCm(){
+  const l=this.vertexXYZ(LANDMARKS.shoulderL),r=this.vertexXYZ(LANDMARKS.shoulderR),c=this.vertexXYZ(LANDMARKS.crotch);
+  if(!l||!r||!c)return NaN;
+  // Match the reference definition: vertical height difference, not a surface tape path.
+  return Math.abs((l.y+r.y)*.5-c.y)*100;
+ }
+ landmarkData(){
+  return {
+   shoulderL:{index:LANDMARKS.shoulderL,...this.vertexXYZ(LANDMARKS.shoulderL)},
+   shoulderR:{index:LANDMARKS.shoulderR,...this.vertexXYZ(LANDMARKS.shoulderR)},
+   crotch:{index:LANDMARKS.crotch,...this.vertexXYZ(LANDMARKS.crotch)},
+   shoulderBreadthCm:this.shoulderBreadthCm(),
+   shoulderToCrotchCm:this.shoulderToCrotchCm()
+  };
+ }
+ ensureLandmarkMarkers(){
+  if(this.landmarkMarkers)return;
+  const make=(radius)=>new THREE.Mesh(
+   new THREE.SphereGeometry(radius,16,12),
+   new THREE.MeshBasicMaterial({color:0xffffff,depthTest:false})
+  );
+  const l=make(.018),r=make(.018),c=make(.021);
+  l.renderOrder=r.renderOrder=c.renderOrder=50;
+  this.scene.add(l,r,c);
+  this.landmarkMarkers={l,r,c};
+  this.updateLandmarkMarkers();
+ }
+ updateLandmarkMarkers(){
+  if(!this.landmarkMarkers||!this.body)return;
+  const d=this.landmarkData();
+  if(d.shoulderL)this.landmarkMarkers.l.position.set(d.shoulderL.x,d.shoulderL.y,d.shoulderL.z);
+  if(d.shoulderR)this.landmarkMarkers.r.position.set(d.shoulderR.x,d.shoulderR.y,d.shoulderR.z);
+  if(d.crotch)this.landmarkMarkers.c.position.set(d.crotch.x,d.crotch.y,d.crotch.z);
+  const vis=!!this.landmarksVisible;
+  this.landmarkMarkers.l.visible=vis;this.landmarkMarkers.r.visible=vis;this.landmarkMarkers.c.visible=vis;
+ }
+ toggleLandmarks(force){
+  this.landmarksVisible=force===undefined?!this.landmarksVisible:!!force;
+  this.ensureLandmarkMarkers();
+  this.updateLandmarkMarkers();
+  return this.landmarksVisible;
+ }
+
  heightCm(){
   if(!this.body)return NaN;
   this.body.geometry.computeBoundingBox();
@@ -139,6 +200,7 @@ export class BodyEngine{
   return this.measure(MEASURE_RULERS[name]);
  }
  torsoProxyCm(){
+  // Legacy diagnostic only. Generator V3.1.1 uses shoulderToCrotchCm().
   return this.getMeasureCm("measure-napetowaist-dist")+this.getMeasureCm("measure-waisttohip-dist");
  }
  weightKg(){
@@ -161,7 +223,7 @@ export class BodyEngine{
   if(!this.body)return this.metrics;
   const heightCm=this.heightCm(),bsa=this.surfaceArea(),weightKg=bsa*bsa*3600/heightCm,volumeL=this.volume()*1000,measures={};
   for(const [name,path] of Object.entries(MEASURE_RULERS))measures[name]=this.measure(path);
-  this.metrics={heightCm,bsa,weightKg,volumeL,ageYears:this.ageYears(this.state.age),measures,torsoProxyCm:this.torsoProxyCm()};
+  this.metrics={heightCm,bsa,weightKg,volumeL,ageYears:this.ageYears(this.state.age),measures,torsoProxyCm:this.torsoProxyCm(),shoulderToCrotchCm:this.shoulderToCrotchCm(),shoulderBreadthCm:this.shoulderBreadthCm(),landmarks:this.landmarkData()};
   if(emit)dispatchEvent(new CustomEvent("body-metrics",{detail:this.metrics}));
   return this.metrics;
  }
