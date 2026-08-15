@@ -111,3 +111,15 @@ body.revisionMode .revisionRow{display:block}
 }
 
 #genLandmarks{border:1px solid rgba(255,255,255,.13)}
+
+/* V3.2 Batch Lab */
+.batchImport{display:flex;gap:6px;flex-wrap:wrap}
+.fileButton{display:inline-flex;align-items:center;border-radius:11px;background:#303034;color:#f5f5f6;padding:9px 12px;font-weight:650;font-size:9px}
+.fileButton input{display:none}
+.batchInfo{font-size:8px;color:#8d8d93;background:rgba(255,255,255,.025);border-radius:9px;padding:8px;margin-top:7px;line-height:1.5}
+.batchInfo b,.batchInfo span{display:block}.batchInfo b{color:#ddd;font-size:9px}
+.batchHeadline{font-size:9px;color:#aaa;padding:10px 3px 6px}
+.batchTable{display:grid;grid-template-columns:minmax(135px,1.7fr) .52fr .7fr .7fr;gap:5px;align-items:center;border-top:1px solid rgba(255,255,255,.055);padding:8px 6px;font-size:8px;text-align:right}
+.batchTable>span:first-child{text-align:left;min-width:0}.batchTable b,.batchTable small{display:block}.batchTable b{font-size:9px}.batchTable small{font-size:6px;color:#777;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.batchTableHead{font-size:7px;color:#666;border-top:0;padding-top:3px}.batchTable.best{background:rgba(255,255,255,.04);border-radius:8px}.batchTable.best>span:nth-child(3){font-weight:700;color:#b9e8c0}
+.batchMeasureMatrix{margin-top:9px;padding:9px;background:rgba(255,255,255,.025);border-radius:10px;font-size:7px;color:#888;line-height:1.5}.batchMeasureMatrix>b,.batchMeasureMatrix>span{display:block}.batchMeasureMatrix>b{color:#aaa;margin-bottom:4px}.batchMeasureMatrix strong{color:#ddd}
