@@ -105,8 +105,10 @@ export class BodyEngine{
   if(!flat||!a)return;
   for(let k=0;k<flat.length;k+=4){const i=flat[k]*3;out[i]+=flat[k+1]*this.scaleFactor*a;out[i+1]+=flat[k+2]*this.scaleFactor*a;out[i+2]-=flat[k+3]*this.scaleFactor*a}
  }
- updateBody(){
+ updateBody(options={}){
   if(!this.body||!this.base)return;
+  const doNormals=options.normals!==false;
+  const doMetrics=options.metrics!==false;
   const out=new Float32Array(this.base),fv=this.factors();
   if(this.exactChunks.length===6){
    for(const t of this.exactMeta){
@@ -115,17 +117,36 @@ export class BodyEngine{
     for(let k=t.start,end=t.start+t.length;k<end;k+=4){const i=data[k]*3;out[i]+=data[k+1]*this.scaleFactor*a;out[i+1]+=data[k+2]*this.scaleFactor*a;out[i+2]-=data[k+3]*this.scaleFactor*a}
    }
   }
-  if(this.directData)for(const [id,v] of Object.entries(this.directState)){if(!v)continue;const d=this.directData[id];this.applyFlat(out,v<0?d.minus:d.plus,Math.abs(v))}
-  if(this.faceData)for(const [id,v] of Object.entries(this.faceState)){if(!v)continue;const d=this.faceData[id];this.applyFlat(out,v<0?d.minus:d.plus,Math.abs(v))}
+  if(this.directData)for(const [id,v] of Object.entries(this.directState)){if(!v)continue;const d=this.directData[id];if(!d)continue;this.applyFlat(out,v<0?d.minus:d.plus,Math.abs(v))}
+  if(this.faceData)for(const [id,v] of Object.entries(this.faceState)){if(!v)continue;const d=this.faceData[id];if(!d)continue;this.applyFlat(out,v<0?d.minus:d.plus,Math.abs(v))}
   const p=this.body.geometry.attributes.position;p.array.set(out);p.needsUpdate=true;
-  this.body.geometry.computeVertexNormals();this.body.geometry.computeBoundingBox();this.body.geometry.computeBoundingSphere();
-  clearTimeout(this.metricTimer);this.metricTimer=setTimeout(()=>this.computeMetrics(),100);
+  if(doNormals)this.body.geometry.computeVertexNormals();
+  this.body.geometry.computeBoundingBox();this.body.geometry.computeBoundingSphere();
+  if(doMetrics){clearTimeout(this.metricTimer);this.metricTimer=setTimeout(()=>this.computeMetrics(),100)}
  }
  measure(indices){
   if(!this.body||!indices)return NaN;const a=this.body.geometry.attributes.position.array;let total=0,prev=indices[0];
   for(const vi of indices){const i=prev*3,j=vi*3;total+=Math.hypot(a[i]-a[j],a[i+1]-a[j+1],a[i+2]-a[j+2]);prev=vi}
   return total*100;
  }
+ heightCm(){
+  if(!this.body)return NaN;
+  this.body.geometry.computeBoundingBox();
+  const b=this.body.geometry.boundingBox;
+  return (b.max.y-b.min.y)*100;
+ }
+ getMeasureCm(name){
+  return this.measure(MEASURE_RULERS[name]);
+ }
+ torsoProxyCm(){
+  return this.getMeasureCm("measure-napetowaist-dist")+this.getMeasureCm("measure-waisttohip-dist");
+ }
+ weightKg(){
+  const h=this.heightCm();
+  const bsa=this.surfaceArea();
+  return bsa*bsa*3600/h;
+ }
+
  surfaceArea(){
   const p=this.body.geometry.attributes.position.array,idx=this.body.geometry.index.array;let area=0;
   for(let k=0;k<idx.length;k+=3){const a=idx[k]*3,b=idx[k+1]*3,c=idx[k+2]*3,abx=p[b]-p[a],aby=p[b+1]-p[a+1],abz=p[b+2]-p[a+2],acx=p[c]-p[a],acy=p[c+1]-p[a+1],acz=p[c+2]-p[a+2];area+=.5*Math.hypot(aby*acz-abz*acy,abz*acx-abx*acz,abx*acy-aby*acx)}
@@ -136,11 +157,13 @@ export class BodyEngine{
   for(let k=0;k<idx.length;k+=3){const a=idx[k]*3,b=idx[k+1]*3,c=idx[k+2]*3;v+=(p[a]*(p[b+1]*p[c+2]-p[b+2]*p[c+1])-p[a+1]*(p[b]*p[c+2]-p[b+2]*p[c])+p[a+2]*(p[b]*p[c+1]-p[b+1]*p[c]))/6}
   return Math.abs(v);
  }
- computeMetrics(){
-  if(!this.body)return;this.body.geometry.computeBoundingBox();const b=this.body.geometry.boundingBox,heightCm=(b.max.y-b.min.y)*100,bsa=this.surfaceArea(),weightKg=bsa*bsa*3600/heightCm,volumeL=this.volume()*1000,measures={};
+ computeMetrics(emit=true){
+  if(!this.body)return this.metrics;
+  const heightCm=this.heightCm(),bsa=this.surfaceArea(),weightKg=bsa*bsa*3600/heightCm,volumeL=this.volume()*1000,measures={};
   for(const [name,path] of Object.entries(MEASURE_RULERS))measures[name]=this.measure(path);
-  this.metrics={heightCm,bsa,weightKg,volumeL,ageYears:this.ageYears(this.state.age),measures};
-  dispatchEvent(new CustomEvent("body-metrics",{detail:this.metrics}));
+  this.metrics={heightCm,bsa,weightKg,volumeL,ageYears:this.ageYears(this.state.age),measures,torsoProxyCm:this.torsoProxyCm()};
+  if(emit)dispatchEvent(new CustomEvent("body-metrics",{detail:this.metrics}));
+  return this.metrics;
  }
  frame(){
   this.body.geometry.computeBoundingBox();const b=this.body.geometry.boundingBox,s=new THREE.Vector3(),c=new THREE.Vector3();b.getSize(s);b.getCenter(c);c.x=0;c.z=0;this.orbit.target.copy(c);

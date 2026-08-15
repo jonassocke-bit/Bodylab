@@ -56,3 +56,56 @@ body.revisionMode .revisionRow{display:block}
 .debugStatuses{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:9px 0}.debugStatuses button{font-size:9px}.debugStatuses button.active{background:#eee;color:#111}
 .debugComment{width:100%;min-height:70px;background:#28282c;border:1px solid rgba(255,255,255,.09);color:#fff;border-radius:9px;padding:8px;font-size:10px;resize:vertical}
 .debugNav{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px}
+
+
+/* V3.1 Measurement Lab */
+#topActions{max-width:calc(100vw - 28px);flex-wrap:wrap;justify-content:flex-end}
+#topActions button:disabled{opacity:.4}
+.generatorOverlay{padding-bottom:calc(14px + env(safe-area-inset-bottom))}
+.generatorHead{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.generatorHead strong,.generatorHead small{display:block}
+.generatorHead strong{font-size:11px;letter-spacing:.04em}
+.generatorHead small{font-size:8px;color:#85858b;margin-top:3px}
+.generatorIntro{font-size:9px;line-height:1.45;color:#aaa;margin:11px 0;background:rgba(255,255,255,.035);padding:9px;border-radius:10px}
+.generatorIntro.compact{margin-top:4px}
+.generatorSectionTitle{font-size:8px;letter-spacing:.15em;color:#777;margin:15px 1px 7px}
+.generatorGrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.generatorGrid label{font-size:8px;color:#98989e}
+.generatorGrid select,.generatorGrid input,.measureCard input{
+ width:100%;border:1px solid rgba(255,255,255,.1);background:#28282c;color:#fff;border-radius:9px;padding:9px;font-size:10px;margin-top:4px;min-width:0
+}
+.generatorGrid select{height:36px}
+.inputUnit{position:relative}
+.inputUnit input{padding-right:42px}
+.inputUnit span{position:absolute;right:9px;bottom:10px;font-size:8px;color:#85858b;pointer-events:none}
+.measureCards{display:grid;gap:7px}
+.measureCard{border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025);border-radius:12px;padding:9px}
+.measureCardHead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.measureCardHead strong{font-size:10px}
+.measureCardHead>span{font-size:7px;color:#777;text-transform:uppercase;letter-spacing:.08em}
+.measureCard p{font-size:8px;line-height:1.38;color:#8f8f95;margin:5px 0 2px}
+.useToggle{display:flex;align-items:center;gap:4px;font-size:7px;color:#9b9ba1;white-space:nowrap}
+.useToggle input{width:auto;margin:0;accent-color:#ddd}
+.generatorActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.generatorActions button{font-size:9px}
+.generatorActions .primary{background:#eee;color:#111}
+.generatorProgress{margin-top:9px;background:#252529;border-radius:10px;padding:9px}
+.generatorProgress b,.generatorProgress span{display:block}
+.generatorProgress b{font-size:9px}.generatorProgress span{font-size:7px;color:#888;margin-top:3px}
+.generatorResults{margin-top:10px}
+.emptyResult{font-size:8px;color:#777;text-align:center;padding:16px 5px}
+.resultHeader,.resultRow{display:grid;grid-template-columns:minmax(110px,1.5fr) .75fr .75fr .48fr;gap:5px;align-items:center}
+.resultHeader{font-size:7px;color:#69696f;padding:5px 7px;text-align:right}
+.resultHeader span:first-child{text-align:left}
+.resultRow{border-top:1px solid rgba(255,255,255,.055);padding:8px 7px;font-size:8px;text-align:right}
+.resultRow>div{text-align:left;min-width:0}
+.resultRow strong,.resultRow small{display:block}
+.resultRow strong{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.resultRow small{font-size:6px;color:#74747a;margin-top:2px;letter-spacing:.06em}
+.resultRow b{font-size:8px}
+.resultRow.good b{color:#b9e8c0}.resultRow.okay b{color:#e8d8a5}.resultRow.warn b{color:#f2aaa5}
+.resultLegend{font-size:7px;line-height:1.45;color:#85858b;margin-top:8px;padding:8px;background:rgba(255,255,255,.025);border-radius:9px}
+@media(max-width:390px){
+ .generatorGrid{grid-template-columns:1fr}
+ .resultHeader,.resultRow{grid-template-columns:minmax(100px,1.4fr) .72fr .72fr .45fr}
+}

@@ -2,6 +2,7 @@
 import {BodyEngine} from "./engine.js";
 import {BodyUI} from "./ui.js";
 import {setupDebug} from "./debug.js";
+import {MeasurementLab} from "./generator.js";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
 function progress(a,b){title.textContent=a;detail.textContent=b||""}
@@ -25,11 +26,12 @@ async function boot(){
  const bones=await engine.loadRig();
  document.getElementById("rigStatus").textContent=bones+" Bones geladen";
 
+ const measurementLab=new MeasurementLab(engine,ui);
  engine.computeMetrics();
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
  setTimeout(()=>card.classList.add("hidden"),500);
 
- window.BodyLab={engine,ui};
+ window.BodyLab={engine,ui,measurementLab};
 }
 boot().catch(err=>{
  console.error(err);

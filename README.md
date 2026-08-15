@@ -1,4 +1,4 @@
-# Harness Body Lab v3.0.1 — clean rewrite
+# Harness Body Lab v3.1.0 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
 
@@ -27,9 +27,39 @@ Each parameter can be classified as Main / Fine / Advanced, renamed, annotated, 
 and supplied with calibration/reference marks.
 
 ## Rig / poses
-The original MakeHuman default rig data is loaded and counted, but v3.0.1 deliberately does not
+The original MakeHuman default rig data is loaded and counted, but v3.1.0 deliberately does not
 apply the previously unreliable manual arm poses. Proper BVH / Mixamo retargeting will be added
 as a separately testable module after this clean baseline is validated.
 
-## v3.0.1 hotfix
+## v3.1.0 hotfix
 Fixed the strict-mode runtime error in the Face-group builder. Advanced group/control creation is now defensive so one malformed control cannot abort the whole boot.
+
+
+## v3.1.0 — Measurement Lab
+
+Adds the first user-facing body generator.
+
+Required test inputs:
+- body basis
+- age
+- height
+- weight
+- bust circumference
+- waist circumference
+- shoulder-to-crotch
+
+Optional validation inputs:
+- hip circumference
+- underbust circumference
+- shoulder breadth
+
+Optional values can be entered while "zum Generieren" remains disabled. They are then
+reported as true hold-out/control measurements and do not influence the solver.
+
+The V3.1 torso length is explicitly a calibration proxy:
+`measure-napetowaist-dist + measure-waisttohip-dist`.
+This is intentional so that real shoulder-to-crotch measurements can be collected and
+used to calibrate the mapping instead of pretending the two definitions are already identical.
+
+The solver uses the original MakeHuman measurement morphs and allows internal direct-morph
+extrapolation to ±180% while the core height/weight macros remain inside their native 0–100% range.
