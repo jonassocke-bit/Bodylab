@@ -227,3 +227,7 @@ training R² shows that the MakeHuman measurement carries almost no individual i
 
 The production Generator is not silently switched to V3.7 yet. The candidate must first beat the
 baseline in the built-in A/B test.
+
+
+## V3.8 Mess-Revision
+Neuer visueller Messprotokoll-Review: 7 priorisierte Maße, direkte Mesh-Markierung, verständliche Beschreibung, Offset-Revision, Status und JSON-Export. Bestehende Parameter-Revision bleibt erhalten.

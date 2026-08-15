@@ -200,6 +200,13 @@ export class BodyEngine{
   }
   return {widthCm:(maxX-minX)*100,depthCm:(maxZ-minZ)*100,heightCm:(maxY-minY)*100};
  }
+
+ measurePathPoints(name){
+  const path=MEASURE_RULERS[name],a=this.body?.geometry?.attributes?.position?.array;
+  if(!path||!a)return [];
+  return path.map(vi=>new THREE.Vector3(a[vi*3],a[vi*3+1],a[vi*3+2]));
+ }
+
  harnessBlindMetrics(){
   const chest=this.measurePathExtents("measure-bust-circ");
   const waist=this.measurePathExtents("measure-waist-circ");
