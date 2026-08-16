@@ -279,3 +279,11 @@ Only interpretable regional groups (`measure`, `torso`, `hip`, `breast`, `stomac
 `pelvis`) are eligible; highly entangled ELVS bodyshape/endocrine controls are excluded.
 
 Production generation remains unchanged until the built-in A/B validator shows a real improvement.
+
+
+## V3.12 — Persistent Batch + tuned solver
+- Last dataset and last successfully completed Batch are stored in IndexedDB and restored automatically after reload.
+- Stable Batch ID `BL-<hash>-<rows>` makes comparisons reproducible.
+- Saved Batch JSON export/import and explicit delete controls.
+- V3.12 preserves baseline waist depth instead of chasing its low-confidence predicted target.
+- Morphs with strong waist-depth spill are penalized; fewer morphs, stronger regularization and smaller correction steps are used.

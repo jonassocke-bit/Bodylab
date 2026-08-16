@@ -6,7 +6,7 @@ import {MeasurementLab} from "./generator.js";
 import {BatchLab} from "./batch.js";
 import {CalibrationLab} from "./calibration.js";
 import {CalibratedSolverV37} from "./solver-v37.js";
-import {SolverV311} from "./solver-v311.js";
+import {SolverV312} from "./solver-v312.js";
 import {MeasureReviewLab} from "./measure-review.js";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
@@ -34,14 +34,14 @@ async function boot(){
  const measurementLab=new MeasurementLab(engine,ui);
  const batchLab=new BatchLab(engine,ui,measurementLab);
  const solverV37=new CalibratedSolverV37(engine,ui,measurementLab,batchLab);
- const solverV311=new SolverV311(engine,ui,measurementLab,batchLab);
- const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV311);
+ const solverV312=new SolverV312(engine,ui,measurementLab,batchLab);
+ const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV312);
  const measureReviewLab=new MeasureReviewLab(engine);
  engine.computeMetrics();
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
  setTimeout(()=>card.classList.add("hidden"),500);
 
- window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV311,measureReviewLab};
+ window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,measureReviewLab};
 }
 boot().catch(err=>{
  console.error(err);

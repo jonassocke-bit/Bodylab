@@ -1,3 +1,4 @@
+import {BatchPersistence} from "./persistent-batch.js";
 
 const MEASURE_KEYS=["chest","waist","torso","hip","shoulder","underbust"];
 const LABELS={
@@ -142,13 +143,13 @@ export class BatchLab{
  constructor(engine,ui,measurementLab){
   this.engine=engine;this.ui=ui;this.lab=measurementLab;
   this.panel=document.getElementById("batchPanel");this.button=document.getElementById("batchToggle");
-  this.rows=[];this.results=null;this.abort=false;this.bind();this.render();
+  this.rows=[];this.results=null;this.abort=false;this.datasetName="Datensatz";this.render();this.bind();this.persistence=new BatchPersistence(this);this.restoreSaved();
  }
  bind(){this.button.disabled=false;this.button.onclick=()=>this.panel.classList.remove("hidden")}
  render(){
   this.panel.innerHTML=`
    <div class="generatorHead">
-    <div><strong>BODY LAB · BATCH LAB</strong><small>V3.2 · Datensatz rein → Fragebogenvergleich raus</small></div>
+    <div><strong>BODY LAB · BATCH LAB</strong><small>V3.12 · Datensatz rein → Fragebogenvergleich raus</small></div>
     <button id="batchClose">Schließen</button>
    </div>
    <div class="generatorIntro">
@@ -175,6 +176,12 @@ export class BatchLab{
    </div>
    <div id="batchDatasetInfo" class="batchInfo">Noch kein Datensatz geladen.</div>
    <div id="batchGenderDiag" class="batchInfo genderDiag">Gender-Diagnose: noch kein Datensatz geladen.</div>
+   <div id="batchSavedInfo" class="batchInfo savedBatchInfo"><b>Lokaler Speicher</b><span>Noch kein gespeicherter Batch.</span></div>
+   <div class="batchImport">
+    <button id="batchSavedExport">Gespeicherten Batch exportieren</button>
+    <label class="fileButton">Batch importieren<input id="batchSavedImport" type="file" accept=".json,application/json"></label>
+    <button id="batchSavedClear">Gespeicherten Batch löschen</button>
+   </div>
 
    <div class="generatorSectionTitle">TESTUMFANG</div>
    <div class="generatorGrid">
@@ -247,6 +254,33 @@ export class BatchLab{
   this.panel.querySelector("#optTarget").onchange=()=>this.renderOptimizer();
   this.panel.querySelector("#optMetric").onchange=()=>this.renderOptimizer();
   this.panel.querySelector("#batchLimit").onchange=()=>this.updateGenderDiag();
+  this.panel.querySelector("#batchSavedExport").onclick=()=>this.persistence.export();
+  this.panel.querySelector("#batchSavedClear").onclick=async()=>{if(confirm("Gespeicherten Batch wirklich löschen?")){await this.persistence.clear();this.renderSavedInfo()}};
+  this.panel.querySelector("#batchSavedImport").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const x=await this.persistence.importFile(f);this.datasetName=x.meta?.name||"Importierter Batch";this.showDataset(this.datasetName);this.restoreResultUI();this.renderSavedInfo()}catch(err){alert("Batch-Import fehlgeschlagen: "+(err.message||err))}};
+ }
+ async restoreSaved(){
+  try{
+   const x=await this.persistence.restore();if(!x)return this.renderSavedInfo();
+   this.datasetName=x.meta?.name||"Gespeicherter Batch";
+   const lim=this.panel.querySelector("#batchLimit"),mode=this.panel.querySelector("#batchMode");
+   if(lim&&x.meta?.limit!=null&&[...lim.options].some(o=>o.value===String(x.meta.limit)))lim.value=String(x.meta.limit);
+   if(mode&&x.meta?.mode)mode.value=x.meta.mode;
+   this.showDataset(this.datasetName+" · wiederhergestellt");this.restoreResultUI();this.renderSavedInfo();
+  }catch(err){console.warn("Batch restore failed",err)}
+ }
+ async persistDataset(name=this.datasetName){
+  if(!this.rows.length)return;this.datasetName=name;
+  await this.persistence.save({rows:this.rows,results:this.results,name,limit:Number(this.panel.querySelector("#batchLimit")?.value||0),mode:this.panel.querySelector("#batchMode")?.value||"ladder"});this.renderSavedInfo();
+ }
+ renderSavedInfo(){
+  const box=this.panel?.querySelector("#batchSavedInfo");if(!box)return;const m=this.persistence?.meta;
+  if(!m){box.innerHTML="<b>Lokaler Speicher</b><span>Kein gespeicherter Batch.</span>";return}
+  const d=new Date(m.savedAt),when=isNaN(d)?m.savedAt:d.toLocaleString();
+  box.innerHTML=`<b>${m.id}</b><span>${m.rows} Personen · ${m.complete?"vollständiger Batch":"Datensatz"} · ${when}</span>`;
+ }
+ restoreResultUI(){
+  if(!this.results)return;this.panel.querySelector("#batchExport").disabled=false;
+  this.renderResults();this.renderOptimizer();this.renderHarnessBlindValidation();this.renderBlindValidation();
  }
  async loadANSUR(which){
   const buttons=["ansurFemale","ansurMale","ansurAll"].map(id=>this.panel.querySelector("#"+id));
@@ -282,7 +316,7 @@ export class BatchLab{
    }else{
     this.rows=rows;
    }
-   this.showDataset(which==="all"?"ANSUR II · gemischt/interleaved":`ANSUR II · ${which==="female"?"Frauen":"Männer"}`);
+   const name=which==="all"?"ANSUR II · gemischt/interleaved":`ANSUR II · ${which==="female"?"Frauen":"Männer"}`;this.results=null;this.showDataset(name);await this.persistDataset(name);
   }catch(err){
    console.error(err);
    info.innerHTML=`<b>ANSUR-Download fehlgeschlagen</b><span>${esc(err.message||err)}</span>`;
@@ -296,7 +330,7 @@ export class BatchLab{
    sourceRow:2,gender:1,age:30,height:172,weight:65,build:.52,
    chest:89.44,waist:84.36,torso:64.38,hip:92.78,shoulder:35.31,underbust:null
   }];
-  this.showDataset();
+  this.results=null;this.showDataset();this.persistDataset("Referenzbeispiel");
  }
  downloadTemplate(){
   const t="gender,age,height,weight,chest,waist,shoulder_to_crotch,hip,shoulder_breadth,underbust\nmale,30,172,65,89.44,84.36,64.38,92.78,35.31,\n";
@@ -312,11 +346,11 @@ export class BatchLab{
     raw=raw.map((x,i)=>{const o={};for(const [k,v] of Object.entries(x))o[norm(k)]=v;o.__row=i+1;return o});
    }else raw=parseDelimited(text);
    this.rows=raw.map(normalizeRow).filter(r=>r.height&&r.weight);
-   this.showDataset(file.name);
+   this.results=null;this.showDataset(file.name);await this.persistDataset(file.name);
   }catch(err){alert("Importfehler: "+(err.message||err))}
  }
  showDataset(name="Datensatz"){
-  const n=this.rows.length,has={};
+  this.datasetName=name;const n=this.rows.length,has={};
   for(const k of ["chest","waist","torso","hip","shoulder","underbust"])has[k]=this.rows.filter(r=>r[k]!=null).length;
   const female=this.rows.filter(r=>r.gender===0).length,male=this.rows.filter(r=>r.gender===1).length,neutral=n-female-male;
   this.panel.querySelector("#batchDatasetInfo").innerHTML=
@@ -469,7 +503,7 @@ export class BatchLab{
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
    this.results={
-    build:"BODY LAB v3.10.0",createdAt:new Date().toISOString(),
+    build:"BODY LAB v3.12.0",createdAt:new Date().toISOString(),
     sourceRows:rows.length,
     genderComposition:{
      female:rows.filter(r=>r.gender===0).length,
@@ -483,6 +517,7 @@ export class BatchLab{
    this.renderHarnessBlindValidation();
    this.renderBlindValidation();
    this.panel.querySelector("#batchExport").disabled=false;
+   await this.persistence.updateResults(this.results,{limit:lim,mode:this.panel.querySelector("#batchMode").value});this.renderSavedInfo();
   }catch(err){
    if(err.message!=="__ABORT__")console.error(err),alert("Batchfehler: "+(err.message||err));
   }finally{

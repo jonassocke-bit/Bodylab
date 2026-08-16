@@ -291,3 +291,5 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
 .mrProtocol p{font-size:9px;line-height:1.4;color:#aaa;margin:5px 0 0}
 #measureReviewPanel .mrBody{height:calc(100% - 126px)}
 #measureReviewPanel .mrItem{min-width:118px}
+
+.savedBatchInfo{border:1px solid rgba(185,232,192,.18)}.savedBatchInfo b{color:#b9e8c0}

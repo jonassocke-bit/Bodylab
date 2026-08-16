@@ -55,8 +55,8 @@ function splitPairs(pairs){
 }
 
 export class CalibrationLab{
- constructor(engine,ui,batchLab,solverV37,solverV311){
-  this.engine=engine;this.ui=ui;this.batch=batchLab;this.solverV37=solverV37;this.solverV311=solverV311;
+ constructor(engine,ui,batchLab,solverV37,solverV312){
+  this.engine=engine;this.ui=ui;this.batch=batchLab;this.solverV37=solverV37;this.solverV312=solverV312;
   this.panel=document.getElementById("calibrationPanel");
   this.button=document.getElementById("calibrationToggle");
   this.calibration=null;this.sensitivity=null;this.abort=false;
@@ -92,16 +92,16 @@ export class CalibrationLab{
    </div>
    <div id="v37Results" class="calResults"></div>
 
-   <div class="generatorSectionTitle">C · V3.11 SENSITIVITY SOLVER</div>
+   <div class="generatorSectionTitle">C · V3.12 TUNED SENSITIVITY SOLVER</div>
    <div class="generatorIntro compact">
     Neuer Solver auf Basis der <b>V3.10-Messkalibrierung</b> und deiner neuen <b>142-Regler-Sensitivity-Matrix</b>.
-    Er lernt unbekannte Harness-Geometrie aus Core‑5 und löst die nötigen Morphänderungen anschließend über eine gewichtete Sensitivity-Matrix.
+    Er lernt unbekannte Harness-Geometrie aus Core‑5. V3.12 schützt zusätzlich die Taillentiefe, die in V3.11 als einziges wichtiges Maß schlechter wurde.
    </div>
    <div class="generatorActions">
-    <button id="v311Train" class="primary">V3.11 trainieren</button>
-    <button id="v311AB" disabled>Baseline vs. V3.11 testen</button>
+    <button id="v312Train" class="primary">V3.12 trainieren</button>
+    <button id="v312AB" disabled>Baseline vs. V3.12 testen</button>
    </div>
-   <div id="v311Results" class="calResults"></div>
+   <div id="v312Results" class="calResults"></div>
 
    <div class="generatorSectionTitle">D · MORPH SENSITIVITY MATRIX</div>
    <div class="generatorIntro compact">
@@ -130,8 +130,8 @@ export class CalibrationLab{
   this.panel.querySelector("#calExport").onclick=()=>this.calibration&&download("BodyLab-v3.6-Measurement-Calibration.json",this.calibration);
   this.panel.querySelector("#v37Train").onclick=()=>this.trainV37();
   this.panel.querySelector("#v37AB").onclick=()=>this.testV37();
-  this.panel.querySelector("#v311Train").onclick=()=>this.trainV311();
-  this.panel.querySelector("#v311AB").onclick=()=>this.testV311();
+  this.panel.querySelector("#v312Train").onclick=()=>this.trainV312();
+  this.panel.querySelector("#v312AB").onclick=()=>this.testV312();
   this.panel.querySelector("#sensRun").onclick=()=>this.runSensitivity();
   this.panel.querySelector("#sensAbort").onclick=()=>{this.abort=true};
   this.panel.querySelector("#sensExport").onclick=()=>this.sensitivity&&download("BodyLab-v3.6-Morph-Sensitivity.json",this.sensitivity);
@@ -197,34 +197,34 @@ export class CalibrationLab{
   localStorage.setItem(PROFILE_KEY,JSON.stringify({...this.calibration,active:true}));
   alert("Kalibrierprofil gespeichert. V3.10 verwendet neue Messdefinitionen; erst nach einem neuen Kalibrierlauf und der Validierung dürfen diese Werte in den Solver übernommen werden.");
  }
- trainV311(){
+ trainV312(){
   const rows=this.batch?.rows||[];if(rows.length<50){alert("Bitte zuerst mindestens 50 ANSUR-Personen laden.");return}
-  const model=this.solverV311.train(rows),box=this.panel.querySelector("#v311Results");
-  box.innerHTML=`<div class="optimizerHero"><small>V3.11 HIDDEN-GEOMETRY MODEL</small><strong>${model.rows} Personen</strong><span>80/20 Holdout · neue V3.10 Messdefinitionen</span><b>${Object.keys(model.targets).length} verwertbare Hidden-Maße</b></div>
+  const model=this.solverV312.train(rows),box=this.panel.querySelector("#v312Results");
+  box.innerHTML=`<div class="optimizerHero"><small>V3.12 HIDDEN-GEOMETRY MODEL</small><strong>${model.rows} Personen</strong><span>80/20 Holdout · neue V3.10 Messdefinitionen</span><b>${Object.keys(model.targets).length} verwertbare Hidden-Maße</b></div>
    <div class="calTable calHead"><span>Ziel</span><span>Trust</span><span>Test</span><span>MAE</span></div>
    ${Object.entries(model.targets).map(([k,m])=>`<div class="calTable"><span><b>${k}</b><small>Bias ${m.holdoutBias.toFixed(2)} cm</small></span><span>${m.trust.toFixed(2)}</span><span>${m.nTest}</span><span>${m.holdoutMAE.toFixed(2)}</span></div>`).join("")}`;
-  this.panel.querySelector("#v311AB").disabled=false;
+  this.panel.querySelector("#v312AB").disabled=false;
  }
- async testV311(){
-  if(!this.solverV311.trained()){alert("Bitte zuerst V3.11 trainieren.");return}
+ async testV312(){
+  if(!this.solverV312.trained()){alert("Bitte zuerst V3.12 trainieren.");return}
   const all=(this.batch?.rows||[]).filter(r=>[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite));
   // deterministic last 50 rows: separate from the first rows commonly used during interactive development
   const rows=all.slice(Math.max(0,all.length-50));
-  const before=this.engine.snapshot(),base=[],next=[],perBase={},perNext={},box=this.panel.querySelector("#v311Results");
+  const before=this.engine.snapshot(),base=[],next=[],perBase={},perNext={},box=this.panel.querySelector("#v312Results");
   try{
    for(let i=0;i<rows.length;i++){
-    const r=rows[i];box.innerHTML=`<div class="generatorProgress"><b>V3.11 A/B ${i+1}/${rows.length}</b><span>Core‑5 Baseline gegen Sensitivity Solver</span></div>`;
-    await this.solverV311.baseline(r);const a=this.solverV311.scoreHarness(r);if(Number.isFinite(a.mae))base.push(a.mae);
+    const r=rows[i];box.innerHTML=`<div class="generatorProgress"><b>V3.12 A/B ${i+1}/${rows.length}</b><span>Core‑5 Baseline gegen Sensitivity Solver</span></div>`;
+    await this.solverV312.baseline(r);const a=this.solverV312.scoreHarness(r);if(Number.isFinite(a.mae))base.push(a.mae);
     for(const [k,e] of Object.entries(a.per)){(perBase[k]??=[]).push(Math.abs(e))}
-    await this.solverV311.correct(r);const z=this.solverV311.scoreHarness(r);if(Number.isFinite(z.mae))next.push(z.mae);
+    await this.solverV312.correct(r);const z=this.solverV312.scoreHarness(r);if(Number.isFinite(z.mae))next.push(z.mae);
     for(const [k,e] of Object.entries(z.per)){(perNext[k]??=[]).push(Math.abs(e))}
     await new Promise(q=>setTimeout(q,0));
    }
    const mb=mean(base),mn=mean(next),gain=mb-mn;
    const ks=[...new Set([...Object.keys(perBase),...Object.keys(perNext)])];
-   box.innerHTML=`<div class="optimizerHero ${gain>0?"hit":"miss"}"><small>V3.11 A/B · ${rows.length} PERSONEN</small><strong>${mn.toFixed(2)} cm</strong><span>Baseline ${mb.toFixed(2)} cm → V3.11 ${mn.toFixed(2)} cm</span><b>${gain>=0?"Verbesserung":"Verschlechterung"} ${Math.abs(gain).toFixed(2)} cm (${(100*gain/mb).toFixed(1)}%)</b></div>
+   box.innerHTML=`<div class="optimizerHero ${gain>0?"hit":"miss"}"><small>V3.12 A/B · ${rows.length} PERSONEN</small><strong>${mn.toFixed(2)} cm</strong><span>Baseline ${mb.toFixed(2)} cm → V3.11 ${mn.toFixed(2)} cm</span><b>${gain>=0?"Verbesserung":"Verschlechterung"} ${Math.abs(gain).toFixed(2)} cm (${(100*gain/mb).toFixed(1)}%)</b></div>
    <div class="batchMeasureMatrix"><b>Blind-MAE je verwertbarem Harness-Maß</b>${ks.map(k=>`<span>${k}: ${mean(perBase[k]||[]).toFixed(2)} → <strong>${mean(perNext[k]||[]).toFixed(2)} cm</strong></span>`).join("")}</div>
-   <div class="batchMeasureMatrix"><b>Entscheidung</b><span>${gain>0?"V3.11 schlägt die Baseline. Wir können im nächsten Schritt die Morph-Auswahl/Regularisierung feinoptimieren und danach in den Generator übernehmen.":"V3.11 schlägt die Baseline noch nicht. Dann verändern wir Gewichte/Morph-Auswahl – der Produktionsgenerator bleibt unangetastet."}</span></div>`;
+   <div class="batchMeasureMatrix"><b>Entscheidung</b><span>${gain>0?"V3.12 schlägt die Baseline. Wir können im nächsten Schritt die Morph-Auswahl/Regularisierung feinoptimieren und danach in den Generator übernehmen.":"V3.12 schlägt die Baseline noch nicht. Dann verändern wir Gewichte/Morph-Auswahl – der Produktionsgenerator bleibt unangetastet."}</span></div>`;
   }finally{this.engine.restore(before);this.ui.sync();this.engine.computeMetrics()}
  }
  trainV37(){
