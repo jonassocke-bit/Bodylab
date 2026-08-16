@@ -10,7 +10,7 @@ export class GuidedMeshFitV321{
  save(){localStorage.setItem(STORE,JSON.stringify(this.state))}
  rows(){return (this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,5)}
  inject(){const h=document.createElement('div');h.id='meshFitV321';h.innerHTML=`
- <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.22.0</div>
+ <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.23.0</div>
  <div class="generatorIntro"><b>Kein weiterer Kalibrierungslauf.</b> Dieser Test prüft an nur 5 Personen die technische Kette: Morphwert → Meshänderung → Messwertänderung → Umfangs-Verriegelung. Erst wenn diese Kette nachweislich funktioniert, wird der 100-Personen-Fit wieder freigeschaltet.</div>
  <section class="fcStep"><div class="fcStepHead"><span>1</span><div><b>5 Personen diagnostizieren</b><small>ca. 1–3 Minuten · verändert kein gespeichertes Modell</small></div><strong id="mdStatus">BEREIT</strong></div>
  <div class="generatorActions"><button id="mdRun" class="primary">Diagnose starten</button><button id="mdAbort">Abbrechen</button></div>
@@ -31,8 +31,13 @@ export class GuidedMeshFitV321{
  </div>
  <div class="generatorActions"><button id="limitRun" class="primary">100 Personen prüfen</button><button id="limitAbort">Abbrechen</button></div>
  <div id="limitProgress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>Limit/Gender Diagnose</b><span id="limitPct">0%</span></div><div class="batchProgressTrack"><div id="limitBar"></div></div><div class="batchProgressMeta"><span id="limitCount">0 / 100</span><span id="limitEta">Restzeit wird geschätzt …</span></div></div>
- <div id="limitResult" class="calResults"></div></section>`;this.panel.appendChild(h)}
- bind(){this.panel.querySelector('#mdRun').onclick=()=>this.run();this.panel.querySelector('#mdAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#objRun').onclick=()=>this.runObjective();this.panel.querySelector('#objAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#auditRun').onclick=()=>this.runTargetAudit();this.panel.querySelector('#auditAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#limitRun').onclick=()=>this.runLimitGenderAudit();this.panel.querySelector('#limitAbort').onclick=()=>{this.abort=true}}
+ <div id="limitResult" class="calResults"></div></section>
+ <section class="fcStep"><div class="fcStepHead"><span>6</span><div><b>V3.23 Mesh-Fitter bestätigen</b><small>100 Validation-Personen · echte Mesh-Rekonstruktion</small></div><strong id="fit23Status">BEREIT</strong></div>
+ <div class="generatorIntro"><b>Jetzt wird wirklich korrigiert.</b> Frauen: Brusttiefe ist Gesamttiefe bis zum Bustpoint; Brust-Morphs werden vor generischer Torso-Tiefe bevorzugt. Männer: Torso-Tiefe bleibt primär. <code>torso-scale-depth</code> wird für beide bei 100 % gedeckelt. Brustumfang, Taille und Hüfte werden nach jedem Versuch wieder verriegelt.</div>
+ <div class="generatorActions"><button id="fit23Run" class="primary">100 Personen fitten</button><button id="fit23Abort">Abbrechen</button></div>
+ <div id="fit23Progress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>V3.23 Mesh-Fit</b><span id="fit23Pct">0%</span></div><div class="batchProgressTrack"><div id="fit23Bar"></div></div><div class="batchProgressMeta"><span id="fit23Count">0 / 100</span><span id="fit23Eta">Restzeit wird geschätzt …</span></div></div>
+ <div id="fit23Result" class="calResults"></div></section>`;this.panel.appendChild(h)}
+ bind(){this.panel.querySelector('#mdRun').onclick=()=>this.run();this.panel.querySelector('#mdAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#objRun').onclick=()=>this.runObjective();this.panel.querySelector('#objAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#auditRun').onclick=()=>this.runTargetAudit();this.panel.querySelector('#auditAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#limitRun').onclick=()=>this.runLimitGenderAudit();this.panel.querySelector('#limitAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#fit23Run').onclick=()=>this.runV323Fit();this.panel.querySelector('#fit23Abort').onclick=()=>{this.abort=true}}
  sync(){if(this.state.result)this.render(this.state.result)}
  current(){const h=this.engine.harnessBlindMetrics();return {shoulder:this.engine.shoulderBreadthCm(),torso:this.engine.shoulderToCrotchCm(),chestBreadth:h.chestBreadth,chestDepth:h.chestDepth,waistBreadth:h.waistBreadth,waistDepth:h.waistDepth,hipBreadth:h.hipBreadth,neckBase:h.neckBase}}
  meshSample(){const a=this.engine.body?.geometry?.attributes?.position?.array;if(!a)return [];const out=[];const step=Math.max(3,Math.floor(a.length/180));for(let i=0;i<a.length;i+=step)out.push(a[i]);return out}
@@ -311,5 +316,39 @@ export class GuidedMeshFitV321{
  }
 
  async run(){const rows=this.rows();if(rows.length<5){alert('Es sind nicht genug Validation-Personen geladen. Bitte den gespeicherten Datensatz laden.');return}this.abort=false;this.panel.querySelector('#mdProgress').classList.remove('hidden');this.panel.querySelector('#mdStatus').textContent='LÄUFT';const snap=this.engine.snapshot(),people=[];try{for(let i=0;i<5;i++){if(this.abort)break;people.push(await this.diagnosePerson(rows[i],i+1));const p=(i+1)/5*100;this.panel.querySelector('#mdPct').textContent=p.toFixed(0)+'%';this.panel.querySelector('#mdBar').style.width=p+'%';this.panel.querySelector('#mdCount').textContent=`${i+1} / 5`;await new Promise(r=>setTimeout(r,0))}const valid=people.filter(x=>!x.problem),morphWorks=valid.filter(x=>x.morphMeshDelta>1e-7&&x.morphMeasureDelta>.005).length,stale=valid.filter(x=>x.staleAfterRelock).length,stateChanges=valid.filter(x=>x.relockStateChanged).length;this.state.result={at:new Date().toISOString(),people,morphWorks,stale,stateChanges,n:valid.length};this.save();this.render(this.state.result)}finally{this.engine.restore(snap);this.ui.sync();this.engine.computeMetrics()}}
+ async runV323Fit(){
+  const rows=(this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,100);
+  if(rows.length<50){alert('Nicht genug Validation-Personen geladen.');return}
+  const solver=this.calibration?.workflow?.solver;
+  if(!solver?.finalCorrect||!solver?.scoreHarness){alert('V3.23 Mesh-Fitter ist nicht verfügbar.');return}
+  const snap=this.engine.snapshot(),samples=[],before=[],after=[],femaleBefore=[],femaleAfter=[],maleBefore=[],maleAfter=[];
+  const perBefore=Object.fromEntries(TARGETS.map(([k])=>[k,[]])),perAfter=Object.fromEntries(TARGETS.map(([k])=>[k,[]]));
+  const prog=this.panel.querySelector('#fit23Progress');prog.classList.remove('hidden');this.panel.querySelector('#fit23Status').textContent='LÄUFT';this.abort=false;
+  try{
+   for(let i=0;i<rows.length;i++){
+    if(this.abort)break;
+    const t0=performance.now(),r=rows[i];
+    await solver.baseline(r);
+    const b=solver.scoreHarness(r);if(Number.isFinite(b.mae)){before.push(b.mae);(r.gender===0?femaleBefore:maleBefore).push(b.mae)}
+    for(const [k,e] of Object.entries(b.per||{}))if(perBefore[k]&&Number.isFinite(e))perBefore[k].push(Math.abs(e));
+    await solver.finalCorrect(r);
+    const a=solver.scoreHarness(r);if(Number.isFinite(a.mae)){after.push(a.mae);(r.gender===0?femaleAfter:maleAfter).push(a.mae)}
+    for(const [k,e] of Object.entries(a.per||{}))if(perAfter[k]&&Number.isFinite(e))perAfter[k].push(Math.abs(e));
+    const sec=(performance.now()-t0)/1000;if(sec>.01&&sec<300)samples.push(sec);if(samples.length>15)samples.shift();
+    const done=i+1,pct=100*done/rows.length,med=samples.length?[...samples].sort((a,b)=>a-b)[Math.floor(samples.length/2)]:NaN;
+    this.panel.querySelector('#fit23Pct').textContent=pct.toFixed(0)+'%';this.panel.querySelector('#fit23Bar').style.width=pct+'%';this.panel.querySelector('#fit23Count').textContent=`${done} / ${rows.length}`;
+    this.panel.querySelector('#fit23Eta').textContent=Number.isFinite(med)&&done>2?`ca. ${Math.max(0,Math.round(med*(rows.length-done)/60))} min verbleibend`:'Restzeit wird geschätzt …';
+    await new Promise(q=>setTimeout(q,0));
+   }
+   const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:NaN,fmt2=x=>Number.isFinite(x)?x.toFixed(2):'—';
+   const B=mean(before),A=mean(after),impr=B-A,cdB=mean(perBefore.chestDepth),cdA=mean(perAfter.chestDepth);
+   const good=Number.isFinite(A)&&Number.isFinite(B)&&A<B&&Number.isFinite(cdA)&&cdA<cdB;
+   this.panel.querySelector('#fit23Result').innerHTML=`<div class="optimizerHero ${good?'hit':'miss'}"><small>V3.23 · ${after.length} PERSONEN</small><strong>${good?'KORREKTUR WIRKT':'NOCH NICHT ÜBERNEHMEN'}</strong><span>Gesamt-MAE ${fmt2(B)} → <b>${fmt2(A)} cm</b> · Verbesserung ${fmt2(impr)} cm</span></div>
+    <div class="batchMeasureMatrix"><b>Geschlecht</b><span>Frauen: ${fmt2(mean(femaleBefore))} → <strong>${fmt2(mean(femaleAfter))} cm</strong></span><span>Männer: ${fmt2(mean(maleBefore))} → <strong>${fmt2(mean(maleAfter))} cm</strong></span></div>
+    <div class="batchMeasureMatrix"><b>Einzelmaße · MAE vorher → V3.23</b>${TARGETS.map(([k,label])=>`<span>${label}: ${fmt2(mean(perBefore[k]))} → <strong>${fmt2(mean(perAfter[k]))} cm</strong></span>`).join('')}</div>
+    <div class="batchInfo"><b>Entscheidung</b><span>${good?'Wenn insbesondere Brusttiefe deutlich fällt und die übrigen Maße stabil bleiben, folgt nur noch der unangetastete Final-Holdout.':'Noch nicht einfrieren. Das Ergebnis zeigt dann konkret, welches Maß durch die Korrektur schlechter wird.'}</span></div>`;
+   this.panel.querySelector('#fit23Status').textContent=this.abort?'PAUSIERT':'ERLEDIGT';
+  }finally{this.engine.restore(snap);this.ui.sync();this.engine.computeMetrics()}
+ }
  render(r){const p=this.panel;const morphOK=r.morphWorks===r.n&&r.n>0;const staleBug=r.stale>0;let verdict;if(!morphOK)verdict='<b>FEHLER A: Morph → Mesh</b><span>Mindestens ein getesteter Rumpf-Morph verändert das Mesh bzw. die Messung nicht zuverlässig.</span>';else if(staleBug)verdict='<b>FEHLER B GEFUNDEN: Verriegelung lässt Mesh veraltet</b><span>solveDirect ändert Reglerwerte, aber das Mesh wird nach dem letzten Solver-Schritt nicht erneut aufgebaut. Dadurch bewertet V3.21 teilweise einen anderen Mesh-Zustand als in directState gespeichert ist.</span>';else verdict='<b>Technische Kette funktioniert</b><span>Morphs verändern Mesh und Maße, und die Verriegelung hinterlässt keinen veralteten Mesh-Zustand. Dann suchen wir als Nächstes in der Optimierungslogik.</span>';p.querySelector('#mdSummary').innerHTML=`<div class="optimizerHero ${morphOK&&!staleBug?'hit':'miss'}"><small>DIAGNOSE · ${r.n} PERSONEN</small><strong>${staleBug?'BUG GEFUNDEN':morphOK?'KETTE OK':'BUG GEFUNDEN'}</strong><span>Morph→Mesh wirksam: ${r.morphWorks}/${r.n} · Relock-State geändert: ${r.stateChanges}/${r.n} · veraltetes Mesh nach Relock: ${r.stale}/${r.n}</span></div><div class="batchInfo">${verdict}</div>`;p.querySelector('#mdDetails').innerHTML=r.people.map(x=>x.problem?`<div class="batchInfo"><b>Person ${x.index}</b><span>${x.problem}</span></div>`:`<div class="batchMeasureMatrix"><b>Person ${x.index} · ${x.morph}</b><span>Morph: ${fmt(x.morphFrom)} → ${fmt(x.morphTo)}</span><span>stärkste Maßänderung: ${x.morphMeasureKey||'—'} · ${fmt(x.morphMeasureDelta)} cm</span><span>Meshänderung durch Morph: ${fmt(x.morphMeshDelta)}</span><span>Relock änderte Regler: ${x.relockStateChanged?'JA':'nein'}</span><span>Mesh nach Relock veraltet: <strong>${x.staleAfterRelock?'JA':'nein'}</strong></span><span>Messdifferenz vor/nach erzwungenem Mesh-Update: ${fmt(x.immediateVsUpdatedMeasure)} cm</span></div>`).join('');p.querySelector('#mdStatus').textContent='ERLEDIGT';p.querySelector('#mdNext').textContent=(morphOK&&!staleBug)?'BEREIT':'GESPERRT';p.querySelector('#mdNextText').innerHTML=staleBug?'<b>Nächster Fix ist eindeutig.</b><span>Wir korrigieren zuerst die Solver-/Mesh-Synchronisation. Noch keinen 100-Personen-Test starten.</span>':morphOK?'<b>Kein Synchronisationsfehler gefunden.</b><span>Dann untersuchen wir als Nächstes die Zielfunktion und Morph-Auswahl — weiterhin ohne großen Batch.</span>':'<b>Morph-Pipeline reparieren.</b><span>Noch keinen großen Batch starten.</span>'}
 }

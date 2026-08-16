@@ -1,4 +1,4 @@
-# BODY LAB v3.22.0
+# BODY LAB v3.23.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -442,7 +442,7 @@ No Objective/Morph diagnosis logic was changed.
 Vergleicht für 100 Validation-Personen ANSUR-Rohmaß, eingefrorenes Solver-Ziel und tatsächliches Baseline-Mesh. Kein Training, kein Morph-Tuning.
 
 
-## v3.22.0 — Modifier Limit & Gender Diagnosis
+## v3.23.0 — Modifier Limit & Gender Diagnosis
 
 New 100-person diagnostic, with no training and no permanent model changes.
 
@@ -460,3 +460,10 @@ The result classifies the likely cause as:
 4. neither as a single dominant cause.
 
 `calibration.js` logic is unchanged from v3.21.9; only module cache/version strings are updated.
+
+## v3.23.0 — Gender-aware Chest Depth Mesh Fit
+- ANSUR Chest Depth is treated as total AP depth at the chest point; for women this includes bust projection.
+- Female cross-section fitting prioritizes breast geometry before generic torso depth.
+- Male fitting prioritizes torso depth.
+- `torso-scale-depth` is capped at 100% in the production fitter; no artificial >100% torso-depth workaround.
+- New Step 6 runs a real 100-person validation mesh fit and reports before/after MAE by sex and measure.

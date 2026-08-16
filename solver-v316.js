@@ -247,19 +247,31 @@ export class SolverV316{
  async optimizeCrossSections(row){
   const protectedState=this.crossState();
   let best=this.sectionObjective(row,protectedState,protectedState);
-  const candidates=this.crossSectionCandidates(),log=[];
+  let candidates=this.crossSectionCandidates(),log=[];
+
+  // V3.23: ANSUR chest depth is TOTAL anterior-posterior depth at the
+  // chest point. On women that point is the bust point, so breast projection
+  // is already part of the target. Prefer breast geometry before generic
+  // torso depth on women; never use >100% torso depth to manufacture a bust.
+  const female=row.gender===0;
+  const priority=m=>female
+    ? (m.group==='breast'?0:(m.target==='torso-scale-depth'?2:1))
+    : (m.target==='torso-scale-depth'?0:(m.group==='breast'?2:1));
+  candidates=[...candidates].sort((a,b)=>priority(a)-priority(b)||b.selectivity-a.selectivity);
 
   // True mesh-based coordinate search. Circumference is re-locked after every trial,
   // so the remaining morph freedom is used primarily to distribute that circumference
   // into breadth vs depth rather than changing perimeter.
-  for(const step of [.08,.04,.02]){
+  for(const step of [.16,.08,.04,.02]){
    let passMoved=false;
    for(const m of candidates){
     const id=m.id,cur=Number(this.engine.directState[id]||0);
     let bestV=cur,localBest=best;
 
     for(const dir of [-1,1]){
-     let v=Math.max(-1.25,Math.min(1.25,cur+dir*step));
+     let lo=-1.25,hi=1.25;
+     if(m.target==='torso-scale-depth')hi=1.0; // validated V3.22 boundary
+     let v=Math.max(lo,Math.min(hi,cur+dir*step));
      if(m.oneWay)v=Math.max(0,v);
      if(Math.abs(v-cur)<1e-6)continue;
 
