@@ -1,4 +1,4 @@
-# BODY LAB v3.21.7
+# BODY LAB v3.21.8
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -430,3 +430,9 @@ A single missing `}` has been restored. The diagnostic error reporting and the m
 
 ## v3.21.7
 5-Personen-Diagnose für Zielfunktion und Morph-Auswahl. Kein großer Batch.
+
+
+## v3.21.8 — Safari parser hotfix
+Exact browser-reported fix for `calibration.js` line 24:
+one redundant closing brace at EOF was removed.
+No Objective/Morph diagnosis logic was changed.
