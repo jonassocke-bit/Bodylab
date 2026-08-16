@@ -13,7 +13,8 @@ import {SolverV316} from "./solver-v316.js";
 import {MeasureReviewLab} from "./measure-review.js";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
-const APP_VERSION=window.BODYLAB_VERSION||"unknown";
+const APP_VERSION=document.querySelector('meta[name="bodylab-version"]')?.content||"unknown";
+window.BODYLAB_VERSION=APP_VERSION;
 document.title=`Harness Body Lab v${APP_VERSION}`;
 document.querySelectorAll("[data-version-label]").forEach(el=>el.textContent=`BODY LAB · v${APP_VERSION}`);
 

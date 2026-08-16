@@ -1,6 +1,6 @@
-# BODY LAB v3.21.2
+# BODY LAB v3.21.3
 
-> **Aktueller Build: v3.21.2** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
+> **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
 BODY LAB V3.20.1
 
@@ -404,3 +404,9 @@ Nach dem Upload auf GitHub müssen dieselben Werte sichtbar sein:
 - GitHub README: `BODY LAB v3.21.2`
 - Datei `VERSION`: `3.21.2`
 - ZIP/Release-Dateiname: `BODYLAB_V3.21.2_...`
+
+
+## v3.21.3 – Boot-Fix
+- Versionsquelle ohne zusätzliche JavaScript-Datei direkt in `index.html`.
+- Morph-Metadaten-Fix aus v3.21.2 bleibt enthalten.
+- Alle JavaScript-Dateien wurden vor Ausgabe syntaktisch geprüft.
