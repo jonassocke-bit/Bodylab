@@ -1,3 +1,4 @@
+import {V310_CALIBRATION as CAL} from "./v310-calibration-profile.js";
 
 const STORE_KEY="bodylab_final_calibration_v320";
 const SEEN_HOLDOUT_COUNT=50;
@@ -70,7 +71,7 @@ export class FinalCalibrationWorkflowV320{
  render(){
   this.panel.innerHTML=`
    <div class="generatorHead">
-    <div><strong>BODY LAB · FINAL CALIBRATION</strong><small>V3.20 · sauberer Abschluss-Workflow</small></div>
+    <div><strong>BODY LAB · FINAL CALIBRATION</strong><small>V3.20.1 · echter Mesh-Finaltest</small></div>
     <button id="fcClose">Schließen</button>
    </div>
    <div class="generatorIntro">
@@ -106,7 +107,7 @@ export class FinalCalibrationWorkflowV320{
 
    <section class="fcStep" data-step="5">
     <div class="fcStepHead"><span>5</span><div><b>Final Test</b><small>Einmalig auf wirklich ungesehenen Personen</small></div><strong id="fcS5">GESPERRT</strong></div>
-    <div class="generatorIntro compact">Dieser Schritt verändert nichts mehr. Er misst nur noch, wie gut der eingefrorene Solver auf komplett zurückgehaltenen Personen funktioniert.</div>
+    <div class="generatorIntro compact">Dieser Schritt verändert nichts mehr. Jede ungesehene Person wird vollständig als 3D-Mesh rekonstruiert; anschließend werden die tatsächlichen Mesh-Maße gegen ANSUR geprüft. Fortschritt wird gespeichert und kann fortgesetzt werden.</div>
     <div class="generatorActions"><button id="fcFinal" class="primary" disabled>Final Test starten</button><button id="fcPause">Pausieren</button></div>
     <div id="fcProgress" class="batchProgressRich hidden">
      <div class="batchProgressTop"><b id="fcProgressTitle">Final Test</b><span id="fcProgressPct">0%</span></div>
@@ -224,37 +225,61 @@ export class FinalCalibrationWorkflowV320{
   this.panel.querySelector("#fcProgressEta").textContent=done>=3?`ca. ${this.time(med*(total-done))} verbleibend`:"Restzeit wird geschätzt …";
  }
  async finalTest(){
-  const {final}=this.split();if(!this.state.frozen||!final.length)return;
-  const box=this.panel.querySelector("#fcFinalResult"),prog=this.panel.querySelector("#fcProgress");prog.classList.remove("hidden");
-  const start=performance.now(),samples=[],errs={},female=[],male=[];this.abort=false;
-  for(const k of TARGETS)errs[k]=[];
+  const {final}=this.split();if(!this.state.frozen||!final.length||!this.solver)return;
+  const prog=this.panel.querySelector("#fcProgress");prog.classList.remove("hidden");
+  this.panel.querySelector("#fcProgressTitle").textContent="Finaler Mesh-Test";
+  const cp=this.state.meshFinalCheckpoint||{next:0,errs:Object.fromEntries(TARGETS.map(k=>[k,[]])),female:[],male:[],elapsed:0};
+  // A result from V3.20's instant regression-only test is deliberately invalidated.
+  if(this.state.finalResult&&!this.state.finalResult.meshBased)delete this.state.finalResult;
+  const start=performance.now(),samples=[];this.abort=false;
+  for(const k of TARGETS)if(!Array.isArray(cp.errs[k]))cp.errs[k]=[];
 
-  for(let i=0;i<final.length;i++){
-   if(this.abort){this.panel.querySelector("#fcProgressTitle").textContent="Final Test pausiert";return}
-   const t0=performance.now(),r=final[i],person=[];
-   for(const k of TARGETS){
-    const y=+r[k],p=this.correctedPrediction(r,k);
-    if(!Number.isFinite(y)||!Number.isFinite(p))continue;
-    const e=Math.abs(p-y);errs[k].push(e);person.push(e);
+  // Use exactly the frozen hidden-target model from step 4, never retrain on final data.
+  const oldModel=this.solver.model;
+  this.solver.model=JSON.parse(JSON.stringify(this.state.frozenModel.model));
+  try{
+   for(let i=cp.next;i<final.length;i++){
+    if(this.abort){
+     cp.elapsed+=(performance.now()-start)/1000;this.state.meshFinalCheckpoint=cp;this.save();
+     this.panel.querySelector("#fcProgressTitle").textContent="Finaler Mesh-Test pausiert";return;
+    }
+    const t0=performance.now(),r=final[i];
+    // Full production path: Core-5 -> real MakeHuman mesh -> morph correction -> cross-section optimization.
+    await this.solver.baseline(r);
+    await this.solver.finalCorrect(r);
+    const cur=this.solver.current(),person=[];
+    for(const k of TARGETS){
+     const y=+r[k],mesh=+cur[k];
+     if(!Number.isFinite(y)||!Number.isFinite(mesh))continue;
+     // Mesh metrics use the previously validated mesh->ANSUR measurement mapping.
+     const c=CAL[k],pred=c?c.scale*mesh+c.offset:mesh;
+     if(!Number.isFinite(pred))continue;
+     const e=Math.abs(pred-y);cp.errs[k].push(e);person.push(e);
+    }
+    const pm=mean(person);if(Number.isFinite(pm))(r.gender===0?cp.female:cp.male).push(pm);
+    cp.next=i+1;
+    const sec=(performance.now()-t0)/1000;if(sec>.01&&sec<300)samples.push(sec);if(samples.length>30)samples.shift();
+    this.progress(cp.next,final.length,start,samples);
+    // Durable checkpoint after every person: safe on iOS reload/background suspension.
+    this.state.meshFinalCheckpoint=cp;this.save();
+    await new Promise(q=>setTimeout(q,0));
    }
-   const pm=mean(person);if(Number.isFinite(pm))(r.gender===0?female:male).push(pm);
-   const sec=(performance.now()-t0)/1000;if(sec>.0001&&sec<30)samples.push(sec);if(samples.length>40)samples.shift();
-   this.progress(i+1,final.length,start,samples);
-   if(i%25===0)await new Promise(q=>setTimeout(q,0));
-  }
+  }finally{this.solver.model=oldModel}
 
-  const flat=Object.values(errs).flat(),result={
-   n:final.length,mae:mean(flat),p90:pctl(flat,.9),female:mean(female),male:mean(male),
-   per:Object.fromEntries(Object.entries(errs).map(([k,v])=>[k,{mae:mean(v),p90:pctl(v,.9),n:v.length}])),
-   finishedAt:new Date().toISOString()
+  cp.elapsed+=(performance.now()-start)/1000;
+  const flat=Object.values(cp.errs).flat(),result={
+   n:final.length,mae:mean(flat),p90:pctl(flat,.9),female:mean(cp.female),male:mean(cp.male),meshBased:true,
+   per:Object.fromEntries(Object.entries(cp.errs).map(([k,v])=>[k,{mae:mean(v),p90:pctl(v,.9),n:v.length}])),
+   finishedAt:new Date().toISOString(),elapsed:cp.elapsed
   };
-  this.state.finalResult=result;this.state.finalTested=true;this.save();this.sync();
-  this.panel.querySelector("#fcProgressTitle").textContent="Final Test abgeschlossen";
-  this.panel.querySelector("#fcProgressEta").textContent=`Fertig in ${this.time((performance.now()-start)/1000)}`;
+  this.state.finalResult=result;this.state.finalTested=true;delete this.state.meshFinalCheckpoint;this.save();this.sync();
+  this.panel.querySelector("#fcProgressTitle").textContent="Finaler Mesh-Test abgeschlossen";
+  this.panel.querySelector("#fcProgressEta").textContent=`Fertig in ${this.time(cp.elapsed)}`;
  }
+
  renderFinal(r){
   const box=this.panel.querySelector("#fcFinalResult");
-  box.innerHTML=`<div class="optimizerHero hit"><small>FINAL TEST · ${r.n} UNGESEHENE PERSONEN</small><strong>${fmt(r.mae)} cm</strong><span>P90 ${fmt(r.p90)} cm · Frauen ${fmt(r.female)} · Männer ${fmt(r.male)} cm</span><b>Solver eingefroren · keine weitere Kalibrierung</b></div>
+  box.innerHTML=`<div class="optimizerHero hit"><small>FINALER MESH-TEST · ${r.n} UNGESEHENE PERSONEN</small><strong>${fmt(r.mae)} cm</strong><span>P90 ${fmt(r.p90)} cm · Frauen ${fmt(r.female)} · Männer ${fmt(r.male)} cm</span><b>Solver eingefroren · keine weitere Kalibrierung</b></div>
    <div class="batchMeasureMatrix"><b>Einzelmaße</b>${Object.entries(r.per).map(([k,v])=>`<span>${k}: <strong>${fmt(v.mae)} cm</strong> · P90 ${fmt(v.p90)} · n=${v.n}</span>`).join("")}</div>`;
  }
 }

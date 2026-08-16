@@ -1,3 +1,7 @@
+BODY LAB V3.20.1
+
+Fix: Step 5 now performs the full real mesh reconstruction/measurement path for every untouched final-test person. It checkpoints after every person and invalidates the old instantaneous regression-only V3.20 result.
+
 # Harness Body Lab v3.7.0 — clean rewrite
 
 Fresh repository build. This is not a patch on the v2.x application.
