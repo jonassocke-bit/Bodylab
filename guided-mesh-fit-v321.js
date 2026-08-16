@@ -10,7 +10,7 @@ export class GuidedMeshFitV321{
  save(){localStorage.setItem(STORE,JSON.stringify(this.state))}
  rows(){return (this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,5)}
  inject(){const h=document.createElement('div');h.id='meshFitV321';h.innerHTML=`
- <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.23.0</div>
+ <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.23.1</div>
  <div class="generatorIntro"><b>Kein weiterer Kalibrierungslauf.</b> Dieser Test prüft an nur 5 Personen die technische Kette: Morphwert → Meshänderung → Messwertänderung → Umfangs-Verriegelung. Erst wenn diese Kette nachweislich funktioniert, wird der 100-Personen-Fit wieder freigeschaltet.</div>
  <section class="fcStep"><div class="fcStepHead"><span>1</span><div><b>5 Personen diagnostizieren</b><small>ca. 1–3 Minuten · verändert kein gespeichertes Modell</small></div><strong id="mdStatus">BEREIT</strong></div>
  <div class="generatorActions"><button id="mdRun" class="primary">Diagnose starten</button><button id="mdAbort">Abbrechen</button></div>
@@ -329,11 +329,19 @@ export class GuidedMeshFitV321{
     if(this.abort)break;
     const t0=performance.now(),r=rows[i];
     await solver.baseline(r);
-    const b=solver.scoreHarness(r);if(Number.isFinite(b.mae)){before.push(b.mae);(r.gender===0?femaleBefore:maleBefore).push(b.mae)}
-    for(const [k,e] of Object.entries(b.per||{}))if(perBefore[k]&&Number.isFinite(e))perBefore[k].push(Math.abs(e));
+    // Aggregate directly from the measured mesh against the ANSUR aliases.
+    // scoreHarness() only scores fields that exist under the solver's canonical row keys;
+    // chestBreadth/chestDepth can be present under imported lowercase aliases, which made
+    // those two result rows appear as dashes although the fitter itself had measured them.
+    const bMesh=this.current(),bErr=[];
+    for(const [k] of TARGETS){const raw=this.auditRaw(r,k),mv=bMesh[k];if(Number.isFinite(raw)&&Number.isFinite(mv)){const e=Math.abs(mv-raw);perBefore[k].push(e);bErr.push(e)}}
+    const bMae=bErr.length?bErr.reduce((s,v)=>s+v,0)/bErr.length:NaN;
+    if(Number.isFinite(bMae)){before.push(bMae);(r.gender===0?femaleBefore:maleBefore).push(bMae)}
     await solver.finalCorrect(r);
-    const a=solver.scoreHarness(r);if(Number.isFinite(a.mae)){after.push(a.mae);(r.gender===0?femaleAfter:maleAfter).push(a.mae)}
-    for(const [k,e] of Object.entries(a.per||{}))if(perAfter[k]&&Number.isFinite(e))perAfter[k].push(Math.abs(e));
+    const aMesh=this.current(),aErr=[];
+    for(const [k] of TARGETS){const raw=this.auditRaw(r,k),mv=aMesh[k];if(Number.isFinite(raw)&&Number.isFinite(mv)){const e=Math.abs(mv-raw);perAfter[k].push(e);aErr.push(e)}}
+    const aMae=aErr.length?aErr.reduce((s,v)=>s+v,0)/aErr.length:NaN;
+    if(Number.isFinite(aMae)){after.push(aMae);(r.gender===0?femaleAfter:maleAfter).push(aMae)}
     const sec=(performance.now()-t0)/1000;if(sec>.01&&sec<300)samples.push(sec);if(samples.length>15)samples.shift();
     const done=i+1,pct=100*done/rows.length,med=samples.length?[...samples].sort((a,b)=>a-b)[Math.floor(samples.length/2)]:NaN;
     this.panel.querySelector('#fit23Pct').textContent=pct.toFixed(0)+'%';this.panel.querySelector('#fit23Bar').style.width=pct+'%';this.panel.querySelector('#fit23Count').textContent=`${done} / ${rows.length}`;

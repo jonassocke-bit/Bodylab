@@ -1,7 +1,7 @@
 {
   "name": "BODY LAB",
-  "version": "3.23.0",
-  "display": "BODY LAB v3.23.0",
+  "version": "3.23.1",
+  "display": "BODY LAB v3.23.1",
   "versionSource": "index.html meta[name=bodylab-version]",
   "status": "gender-aware-chest-depth-mesh-fit"
 }
