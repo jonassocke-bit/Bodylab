@@ -375,3 +375,7 @@ Calibration UI is intentionally reduced to five steps:
    No model updates occur. Reports MAE/P90 overall, women/men, and per target.
 
 Legacy V3.7/V3.11/V3.12/V3.15 calibration experiments and sensitivity-lab UI are removed from the visible Calibration menu.
+
+
+## V3.21 — Guided Mesh Fit
+Five-step guided mesh-fit workflow after final calibration. Statistical solver remains frozen.

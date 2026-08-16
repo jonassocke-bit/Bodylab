@@ -40,7 +40,7 @@ async function boot(){
  const solverV312=new SolverV312(engine,ui,measurementLab,batchLab);
  const frozenSolverV311=new FrozenSolverV311(engine,ui,measurementLab,batchLab);
  const finalSolverV316=new SolverV316(engine,ui,measurementLab,batchLab);
- const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV312,finalSolverV316);
+ const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV312,finalSolverV316,measurementLab);
  const finalValidationV315=new FinalValidationV315(engine,ui,measurementLab,batchLab,frozenSolverV311,finalSolverV316);
  const measureReviewLab=new MeasureReviewLab(engine);
  engine.computeMetrics();
