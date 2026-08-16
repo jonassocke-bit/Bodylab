@@ -1,4 +1,4 @@
-# BODY LAB v3.21.9
+# BODY LAB v3.22.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -440,3 +440,23 @@ No Objective/Morph diagnosis logic was changed.
 
 ## v3.21.9 — 100-Personen Ziel-Audit
 Vergleicht für 100 Validation-Personen ANSUR-Rohmaß, eingefrorenes Solver-Ziel und tatsächliches Baseline-Mesh. Kein Training, kein Morph-Tuning.
+
+
+## v3.22.0 — Modifier Limit & Gender Diagnosis
+
+New 100-person diagnostic, with no training and no permanent model changes.
+
+It compares female and male chest-depth errors and tests:
+- baseline chest depth,
+- `torso-scale-depth` at 100%,
+- diagnostic extrapolation to 120%,
+- whether going beyond 100% continues to reduce target error,
+- sensitivity of chest depth to separate breast/front-chest morphs.
+
+The result classifies the likely cause as:
+1. modifier limit,
+2. sex/breast geometry or measurement-definition issue,
+3. both,
+4. neither as a single dominant cause.
+
+`calibration.js` logic is unchanged from v3.21.9; only module cache/version strings are updated.
