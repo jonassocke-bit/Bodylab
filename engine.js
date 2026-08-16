@@ -217,16 +217,91 @@ export class BodyEngine{
   return path.map(vi=>new THREE.Vector3(a[vi*3],a[vi*3+1],a[vi*3+2]));
  }
 
+
+ planeSliceSegments(seedName,normal,offsetCm=0,expand=.055){
+  const seed=this.measurePathPoints(seedName),pos=this.body?.geometry?.attributes?.position?.array,idx=this.body?.geometry?.index?.array;
+  if(!seed.length||!pos||!idx)return [];
+  const n=normal.clone().normalize(),center=seed.reduce((a,p)=>a.add(p),new THREE.Vector3()).multiplyScalar(1/seed.length);
+  center.y+=offsetCm/100;
+  let helper=Math.abs(n.y)<.9?new THREE.Vector3(0,1,0):new THREE.Vector3(1,0,0);
+  const u=new THREE.Vector3().crossVectors(n,helper).normalize(),v=new THREE.Vector3().crossVectors(n,u).normalize();
+  let minU=Infinity,maxU=-Infinity,minV=Infinity,maxV=-Infinity;
+  for(const p of seed){const q=p.clone().sub(center),a=q.dot(u),b=q.dot(v);minU=Math.min(minU,a);maxU=Math.max(maxU,a);minV=Math.min(minV,b);maxV=Math.max(maxV,b)}
+  minU-=expand;maxU+=expand;minV-=expand;maxV+=expand;
+  const P=i=>new THREE.Vector3(pos[i*3],pos[i*3+1],pos[i*3+2]),segs=[];
+  const cross=(a,b)=>{
+   const da=a.clone().sub(center).dot(n),db=b.clone().sub(center).dot(n);
+   if((da>0&&db>0)||(da<0&&db<0)||Math.abs(da-db)<1e-9)return null;
+   const t=da/(da-db);if(t<0||t>1)return null;
+   return a.clone().lerp(b,t);
+  };
+  for(let k=0;k<idx.length;k+=3){
+   const a=P(idx[k]),b=P(idx[k+1]),c=P(idx[k+2]),pts=[];
+   for(const q of [cross(a,b),cross(b,c),cross(c,a)])if(q&&!pts.some(x=>x.distanceToSquared(q)<1e-10))pts.push(q);
+   if(pts.length!==2)continue;
+   const mid=pts[0].clone().add(pts[1]).multiplyScalar(.5).sub(center),au=mid.dot(u),av=mid.dot(v);
+   if(au<minU||au>maxU||av<minV||av>maxV)continue;
+   segs.push([pts[0],pts[1]]);
+  }
+  return segs;
+ }
+ planeSliceCircumferenceCm(seedName,normal,offsetCm=0,expand=.055){
+  const segs=this.planeSliceSegments(seedName,normal,offsetCm,expand);
+  return segs.reduce((sum,[a,b])=>sum+a.distanceTo(b),0)*100;
+ }
+ planeSliceExtents(seedName,normal,offsetCm=0,expand=.055){
+  const segs=this.planeSliceSegments(seedName,normal,offsetCm,expand),pts=segs.flat();
+  if(!pts.length)return {widthCm:NaN,depthCm:NaN};
+  let minX=Infinity,maxX=-Infinity,minZ=Infinity,maxZ=-Infinity;
+  for(const p of pts){minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minZ=Math.min(minZ,p.z);maxZ=Math.max(maxZ,p.z)}
+  return {widthCm:(maxX-minX)*100,depthCm:(maxZ-minZ)*100};
+ }
+ planeSliceCenterDepthCm(seedName,offsetCm=0){
+  const segs=this.planeSliceSegments(seedName,new THREE.Vector3(0,1,0),offsetCm,.06);
+  const seed=this.measurePathPoints(seedName);if(!segs.length||!seed.length)return NaN;
+  const cx=seed.reduce((s,p)=>s+p.x,0)/seed.length,zs=[];
+  for(const [a,b] of segs){
+   const dx=b.x-a.x;
+   if(Math.abs(dx)<1e-9){if(Math.abs(a.x-cx)<.004){zs.push(a.z,b.z)};continue}
+   const t=(cx-a.x)/dx;if(t>=0&&t<=1)zs.push(a.z+(b.z-a.z)*t);
+  }
+  if(zs.length<2)return NaN;
+  return (Math.max(...zs)-Math.min(...zs))*100;
+ }
+ limbAxisFromRuler(name){
+  const pts=this.measurePathPoints(name);if(pts.length<2)return new THREE.Vector3(0,1,0);
+  return pts[pts.length-1].clone().sub(pts[0]).normalize();
+ }
+ revisedMeasureCm(name){
+  // User-validated V3.9 protocol revisions. These values are used by Generator, Batch and Calibration.
+  if(name==="measure-bust-circ") return this.planeSliceCircumferenceCm(name,new THREE.Vector3(0,1,0),4,.06);
+  if(name==="measure-hips-circ") return this.planeSliceCircumferenceCm(name,new THREE.Vector3(0,1,0),0,.06);
+  if(name==="measure-thigh-circ") return this.planeSliceCircumferenceCm(name,this.limbAxisFromRuler("measure-upperleg-height"),7,.045);
+  if(name==="measure-calf-circ") return this.planeSliceCircumferenceCm(name,this.limbAxisFromRuler("measure-lowerleg-height"),0,.04);
+  if(name==="measure-ankle-circ") return this.planeSliceCircumferenceCm(name,this.limbAxisFromRuler("measure-lowerleg-height"),-3,.035);
+  if(name==="measure-upperarm-circ") return this.planeSliceCircumferenceCm(name,this.limbAxisFromRuler("measure-upperarm-length"),0,.04);
+  return this.measure(MEASURE_RULERS[name]);
+ }
+ neckCircCm(){
+  return this.planeSliceCircumferenceCm("measure-neck-circ",new THREE.Vector3(0,1,0),1.5,.04);
+ }
+ neckBaseCm(){
+  return this.planeSliceCircumferenceCm("measure-neck-circ",new THREE.Vector3(0,1,0),-.5,.055);
+ }
+
  harnessBlindMetrics(){
+  // Width/depth definitions follow the V3.9 review.
+  // Chest breadth remains the original horizontal extent; chest depth is center-front to center-back.
   const chest=this.measurePathExtents("measure-bust-circ");
   const waist=this.measurePathExtents("measure-waist-circ");
   const hip=this.measurePathExtents("measure-hips-circ");
   return {
-   chestBreadth:chest.widthCm,chestDepth:chest.depthCm,
+   chestBreadth:chest.widthCm,
+   chestDepth:this.planeSliceCenterDepthCm("measure-bust-circ",0),
    waistBreadth:waist.widthCm,waistDepth:waist.depthCm,
    hipBreadth:hip.widthCm,
    waistBackLength:this.getMeasureCm("measure-napetowaist-dist"),
-   neckBase:this.getMeasureCm("measure-neck-circ")
+   neckBase:this.neckBaseCm()
   };
  }
 
@@ -237,7 +312,7 @@ export class BodyEngine{
   return (b.max.y-b.min.y)*100;
  }
  getMeasureCm(name){
-  return this.measure(MEASURE_RULERS[name]);
+  return this.revisedMeasureCm(name);
  }
  torsoProxyCm(){
   // Legacy diagnostic only. Generator V3.1.1 uses shoulderToCrotchCm().
@@ -262,7 +337,7 @@ export class BodyEngine{
  computeMetrics(emit=true){
   if(!this.body)return this.metrics;
   const heightCm=this.heightCm(),bsa=this.surfaceArea(),weightKg=bsa*bsa*3600/heightCm,volumeL=this.volume()*1000,measures={};
-  for(const [name,path] of Object.entries(MEASURE_RULERS))measures[name]=this.measure(path);
+  for(const name of Object.keys(MEASURE_RULERS))measures[name]=this.getMeasureCm(name);
   this.metrics={heightCm,bsa,weightKg,volumeL,ageYears:this.ageYears(this.state.age),measures,torsoProxyCm:this.torsoProxyCm(),shoulderToCrotchCm:this.shoulderToCrotchCm(),shoulderBreadthCm:this.shoulderBreadthCm(),landmarks:this.landmarkData()};
   if(emit)dispatchEvent(new CustomEvent("body-metrics",{detail:this.metrics}));
   return this.metrics;

@@ -162,7 +162,7 @@ export class CalibrationLab{
    });
   }
   result.sort((a,b)=>b.improvement-a.improvement);
-  this.calibration={build:"BODY LAB v3.6.0",createdAt:new Date().toISOString(),sourceBuild:this.batch.results.build,sourceRows:this.batch.results.sourceRows,method:"70/30 deterministic subject split; reference = scale*mesh + offset",metrics:result};
+  this.calibration={build:"BODY LAB v3.10.0",createdAt:new Date().toISOString(),sourceBuild:this.batch.results.build,sourceRows:this.batch.results.sourceRows,method:"70/30 deterministic subject split; reference = scale*mesh + offset",metrics:result};
   this.renderCalibration();
   this.panel.querySelector("#calActivate").disabled=false;this.panel.querySelector("#calExport").disabled=false;
  }
@@ -182,7 +182,7 @@ export class CalibrationLab{
  activateCalibration(){
   if(!this.calibration)return;
   localStorage.setItem(PROFILE_KEY,JSON.stringify({...this.calibration,active:true}));
-  alert("Kalibrierprofil gespeichert. V3.6 markiert es als aktiv; automatische Solver-Anwendung kommt erst nach der Validierung der Kalibrierwerte.");
+  alert("Kalibrierprofil gespeichert. V3.10 verwendet neue Messdefinitionen; erst nach einem neuen Kalibrierlauf und der Validierung dürfen diese Werte in den Solver übernommen werden.");
  }
  trainV37(){
   const rows=this.batch?.rows||[];
@@ -221,7 +221,7 @@ export class CalibrationLab{
   return {
    chest:e.getMeasureCm("measure-bust-circ"),waist:e.getMeasureCm("measure-waist-circ"),
    hip:e.getMeasureCm("measure-hips-circ"),shoulder:e.shoulderBreadthCm(),torso:e.shoulderToCrotchCm(),
-   neck:e.getMeasureCm("measure-neck-circ"),wrist:e.getMeasureCm("measure-wrist-circ"),
+   neck:e.neckCircCm(),wrist:e.getMeasureCm("measure-wrist-circ"),
    thigh:e.getMeasureCm("measure-thigh-circ"),calf:e.getMeasureCm("measure-calf-circ"),ankle:e.getMeasureCm("measure-ankle-circ"),
    upperarmCirc:e.getMeasureCm("measure-upperarm-circ"),upperarmLength:e.getMeasureCm("measure-upperarm-length"),
    lowerarmLength:e.getMeasureCm("measure-lowerarm-length"),lowerlegHeight:e.getMeasureCm("measure-lowerleg-height"),upperlegHeight:e.getMeasureCm("measure-upperleg-height"),
@@ -279,7 +279,7 @@ export class CalibrationLab{
     });
    }
    results.sort((a,b)=>b.scoreCm-a.scoreCm);
-   this.sensitivity={build:"BODY LAB v3.6.0",createdAt:new Date().toISOString(),step,controlCount:results.length,bases:["female","male"],results};
+   this.sensitivity={build:"BODY LAB v3.10.0",createdAt:new Date().toISOString(),step,controlCount:results.length,bases:["female","male"],results};
    localStorage.setItem(SENS_KEY,JSON.stringify(this.sensitivity));
    this.renderSensitivity();this.panel.querySelector("#sensExport").disabled=false;
   }finally{

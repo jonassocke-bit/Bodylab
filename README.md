@@ -239,3 +239,26 @@ Mess-Revision is now a true bottom sheet (~43–44% viewport height). The 3D man
 
 ## V3.9 Full Measurement Protocol Review
 Expanded revision catalog to every measurement currently used by calibration/solver plus relevant existing MakeHuman ruler paths. Each entry explicitly separates reference meaning, ANSUR/protocol note, current Body Lab implementation, confidence/mapping status, and user revision. Derived and non-equivalent mappings are labeled rather than silently treated as exact.
+
+
+## V3.10.0 — User-validated Measurement Protocol
+
+The complete V3.9 user review is bundled as `measurement-review-v39.json`.
+
+Actual measurement logic now follows the approved corrections:
+- Bust circumference: horizontal mesh cross-section, +4 cm relative to previous MakeHuman ruler level.
+- Hip/buttock circumference: horizontal mesh cross-section at approved level.
+- Neck circumference: separate horizontal slice +1.5 cm.
+- Neck-base circumference: separate horizontal slice -0.5 cm.
+- Thigh circumference: +7 cm and orthogonal to local upper-leg axis.
+- Calf circumference: orthogonal to local lower-leg axis.
+- Ankle circumference: -3 cm and orthogonal to local lower-leg axis.
+- Upper-arm circumference: orthogonal to local upper-arm axis; remains explicitly non-equivalent to flexed ANSUR biceps circumference.
+- Chest depth: centerline front-to-back depth, rather than arbitrary maximum-Z endpoints.
+
+Confirmed measurements remain unchanged.
+
+Crucially, Generator, Batch Lab, Blind Validation, Sensitivity and Measurement Calibration now call the
+same revised engine measurement functions. The old V3.7 calibrated-shape correction is deliberately
+disabled because its embedded V3.6 calibration coefficients were learned against the previous
+measurement protocol. Re-run V3.10 calibration before training the next solver candidate.

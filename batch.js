@@ -384,7 +384,7 @@ export class BatchLab{
    chest:e.getMeasureCm("measure-bust-circ"),waist:e.getMeasureCm("measure-waist-circ"),
    torso:e.shoulderToCrotchCm(),hip:e.getMeasureCm("measure-hips-circ"),
    shoulder:e.shoulderBreadthCm(),underbust:e.getMeasureCm("measure-underbust-circ"),
-   neck:e.getMeasureCm(BLIND_RULERS.neck),wrist:e.getMeasureCm(BLIND_RULERS.wrist),
+   neck:e.neckCircCm(),wrist:e.getMeasureCm(BLIND_RULERS.wrist),
    thigh:e.getMeasureCm(BLIND_RULERS.thigh),calf:e.getMeasureCm(BLIND_RULERS.calf),
    ankle:e.getMeasureCm(BLIND_RULERS.ankle),
    ...e.harnessBlindMetrics(),
@@ -469,7 +469,7 @@ export class BatchLab{
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
    this.results={
-    build:"BODY LAB v3.6.0",createdAt:new Date().toISOString(),
+    build:"BODY LAB v3.10.0",createdAt:new Date().toISOString(),
     sourceRows:rows.length,
     genderComposition:{
      female:rows.filter(r=>r.gender===0).length,

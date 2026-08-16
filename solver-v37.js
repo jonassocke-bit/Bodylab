@@ -2,6 +2,7 @@
 import {V36_MEASUREMENT_CALIBRATION as CAL} from "./v36-calibration-profile.js";
 
 const STORE="bodylab_v370_solver_model";
+const MEASUREMENT_PROTOCOL_VERSION="v3.10";
 const TARGETS=["chestBreadth","chestDepth","waistBreadth","waistDepth","hipBreadth","neckBase"];
 const LABELS={chestBreadth:"Brustbreite",chestDepth:"Brusttiefe",waistBreadth:"Taillenbreite",waistDepth:"Taillentiefe",hipBreadth:"Hüftbreite",neckBase:"Halsbasis"};
 // Selected from the user's V3.6 Morph-Sensitivity report:
@@ -116,6 +117,8 @@ export class CalibratedSolverV37{
   return parts.reduce((s,x)=>s+x,0);
  }
  async correct(row,{passes=3}={}){
+  return {applied:false,reason:"v3.10-measurement-protocol-changed-recalibration-required"};
+  /*
   if(!this.trained())return {applied:false,reason:"not-trained"};
   // We only run the calibrated shape layer when the Core-5 torso values exist.
   if(![row.height,row.weight,row.chest,row.waist,row.hip].every(Number.isFinite))return {applied:false,reason:"missing-core5"};
@@ -139,6 +142,7 @@ export class CalibratedSolverV37{
    await this.lab.solveDirect("measure-hips-circ",row.hip);
   }
   return {applied:true,before,after:this.objective(row),used};
+  */
  }
  async baselineCore5(row){
   const l=this.lab,e=this.engine;
