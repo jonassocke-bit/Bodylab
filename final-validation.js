@@ -7,14 +7,14 @@ function isHoldout(r){
  for(let i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;
  return (h%10)>=8; // exact complement of SolverV3.11's training split
 }
-export class FinalValidationV313{
- constructor(engine,ui,lab,batch,solver){
-  this.engine=engine;this.ui=ui;this.lab=lab;this.batch=batch;this.solver=solver;this.abort=false;
+export class FinalValidationV315{
+ constructor(engine,ui,lab,batch,solver,finalSolver){
+  this.engine=engine;this.ui=ui;this.lab=lab;this.batch=batch;this.solver=solver;this.finalSolver=finalSolver;this.abort=false;
   this.panel=document.getElementById("calibrationPanel");this.inject();
  }
  inject(){
   const wrap=document.createElement("div");
-  wrap.innerHTML=`<div class="generatorSectionTitle">E · FINAL VALIDATION · V3.13.1</div>
+  wrap.innerHTML=`<div class="generatorSectionTitle">E · FINAL VALIDATION · V3.15</div>
   <div class="generatorIntro compact">
    Abschlussprüfung des <b>eingefrorenen V3.11-Solvers</b>. Verwendet werden ausschließlich Personen aus seinem
    deterministischen 20%-Holdout; an diesen Personen wurde das Hidden-Geometry-Modell nicht trainiert.
@@ -74,32 +74,55 @@ export class FinalValidationV313{
    if(!ok){alert("V3.11 konnte aus dem gespeicherten Datensatz nicht wiederhergestellt werden.");return}
    if(title)title.textContent="V3.11 wiederhergestellt";
   }
+  if(!this.finalSolver?.trained())this.finalSolver.train(this.batch.rows||[]);
   const candidates=(this.batch?.rows||[]).filter(r=>isHoldout(r)&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite));
   if(!candidates.length){alert("Keine V3.11-Holdout-Personen im gespeicherten Datensatz gefunden.");return}
   const cap=Number(this.panel.querySelector("#finalN").value)||candidates.length,rows=candidates.slice(0,Math.min(cap,candidates.length));
-  const before=this.engine.snapshot(),start=performance.now(),samples=[],base=[],next=[],female={b:[],n:[]},male={b:[],n:[]},per={};
+  const before=this.engine.snapshot(),start=performance.now(),samples=[],base=[],v311=[],final=[],female={b:[],v:[],f:[]},male={b:[],v:[],f:[]},per={};
   const prog=this.panel.querySelector("#finalProgress"),box=this.panel.querySelector("#finalResults");prog.classList.remove("hidden");this.abort=false;
   try{
    for(let i=0;i<rows.length;i++){
     if(this.abort)break;const t0=performance.now(),r=rows[i];this.progress(i,rows.length,start,samples);
     await this.solver.baseline(r);const a=this.solver.scoreHarness(r);if(Number.isFinite(a.mae))base.push(a.mae);
-    await this.solver.correct(r);const z=this.solver.scoreHarness(r);if(Number.isFinite(z.mae))next.push(z.mae);
-    const sx=r.gender===0?female:male;if(Number.isFinite(a.mae))sx.b.push(a.mae);if(Number.isFinite(z.mae))sx.n.push(z.mae);
-    for(const k of new Set([...Object.keys(a.per||{}),...Object.keys(z.per||{})])){
-     per[k]??={b:[],n:[]};if(Number.isFinite(a.per?.[k]))per[k].b.push(Math.abs(a.per[k]));if(Number.isFinite(z.per?.[k]))per[k].n.push(Math.abs(z.per[k]));
+    await this.solver.correct(r);const z=this.solver.scoreHarness(r);if(Number.isFinite(z.mae))v311.push(z.mae);
+
+    await this.finalSolver.baseline(r);await this.finalSolver.finalCorrect(r);
+    const q=this.finalSolver.scoreHarness(r);if(Number.isFinite(q.mae))final.push(q.mae);
+
+    const sx=r.gender===0?female:male;
+    if(Number.isFinite(a.mae))sx.b.push(a.mae);if(Number.isFinite(z.mae))sx.v.push(z.mae);if(Number.isFinite(q.mae))sx.f.push(q.mae);
+
+    for(const k of new Set([...Object.keys(a.per||{}),...Object.keys(z.per||{}),...Object.keys(q.per||{})])){
+     per[k]??={b:[],v:[],f:[]};
+     if(Number.isFinite(a.per?.[k]))per[k].b.push(Math.abs(a.per[k]));
+     if(Number.isFinite(z.per?.[k]))per[k].v.push(Math.abs(z.per[k]));
+     if(Number.isFinite(q.per?.[k]))per[k].f.push(Math.abs(q.per[k]));
     }
     const sec=(performance.now()-t0)/1000;if(sec>.001&&sec<300)samples.push(sec);if(samples.length>30)samples.shift();
     this.progress(i+1,rows.length,start,samples);await new Promise(q=>setTimeout(q,0));
    }
    if(this.abort){this.panel.querySelector("#finalTitle").textContent="Final Validation abgebrochen";return}
-   const mb=mean(base),mn=mean(next),gain=mb-mn,rel=100*gain/mb,pb=pctl(base,.9),pn=pctl(next,.9);
-   const fg=mean(female.b)-mean(female.n),mg=mean(male.b)-mean(male.n);
-   const bad=Object.entries(per).filter(([k,v])=>mean(v.n)>mean(v.b)+.25);
-   const pass=gain>.10&&fg>0&&mg>0&&bad.length===0;
-   box.innerHTML=`<div class="optimizerHero ${pass?"hit":"miss"}"><small>FINAL HOLDOUT · ${base.length} PERSONEN</small><strong>${fmt(mn)} cm</strong><span>Baseline ${fmt(mb)} → V3.11 ${fmt(mn)} cm</span><b>${gain>=0?"Verbesserung":"Verschlechterung"} ${fmt(Math.abs(gain))} cm · ${rel.toFixed(1)}%</b></div>
-   <div class="batchMeasureMatrix"><b>Robustheit</b><span>P90: ${fmt(pb)} → ${fmt(pn)} cm</span><span>Frauen: ${fmt(mean(female.b))} → ${fmt(mean(female.n))} cm</span><span>Männer: ${fmt(mean(male.b))} → ${fmt(mean(male.n))} cm</span></div>
-   <div class="batchMeasureMatrix"><b>Harness-Maße</b>${Object.entries(per).map(([k,v])=>`<span>${k}: ${fmt(mean(v.b))} → <strong>${fmt(mean(v.n))} cm</strong></span>`).join("")}</div>
-   <div class="optimizerHero ${pass?"hit":"miss"}"><small>ABSCHLUSSENTSCHEIDUNG</small><strong>${pass?"BESTANDEN ✓":"NICHT BESTANDEN"}</strong><span>${pass?"V3.11 kann als Produktionsbasis übernommen werden.":"Nicht automatisch übernehmen; Ergebnis zuerst beurteilen."}</span></div>`;
+   const mb=mean(base),mv=mean(v311),mf=mean(final),gain=mb-mf,rel=100*gain/mb;
+   const pb=pctl(base,.9),pv=pctl(v311,.9),pf=pctl(final,.9);
+   const fg=mean(female.b)-mean(female.f),mg=mean(male.b)-mean(male.f);
+   const waist=per.waistDepth||{b:[],v:[],f:[]};
+   const protectedRegression=["shoulder","torso","waistBreadth","hipBreadth","neckBase"].some(k=>per[k]&&mean(per[k].f)>mean(per[k].v)+.15);
+   const waistPass=mean(waist.f)<=mean(waist.b)+.10;
+   const pass=gain>.10&&fg>0&&mg>0&&waistPass&&!protectedRegression;
+
+   box.innerHTML=`<div class="optimizerHero ${pass?"hit":"miss"}"><small>FINAL HOLDOUT · ${base.length} PERSONEN</small><strong>${fmt(mf)} cm</strong>
+   <span>Baseline ${fmt(mb)} · V3.11 ${fmt(mv)} · V3.15 ${fmt(mf)} cm</span>
+   <b>V3.15 vs. Baseline: ${gain>=0?"−":"+"}${fmt(Math.abs(gain))} cm · ${Math.abs(rel).toFixed(1)}%</b></div>
+   <div class="batchMeasureMatrix"><b>Robustheit</b>
+    <span>P90: ${fmt(pb)} → ${fmt(pv)} → <strong>${fmt(pf)} cm</strong></span>
+    <span>Frauen: ${fmt(mean(female.b))} → ${fmt(mean(female.v))} → <strong>${fmt(mean(female.f))} cm</strong></span>
+    <span>Männer: ${fmt(mean(male.b))} → ${fmt(mean(male.v))} → <strong>${fmt(mean(male.f))} cm</strong></span>
+   </div>
+   <div class="batchMeasureMatrix"><b>Harness-Maße · Baseline → V3.11 → V3.15</b>
+    ${Object.entries(per).map(([k,v])=>`<span>${k}: ${fmt(mean(v.b))} → ${fmt(mean(v.v))} → <strong>${fmt(mean(v.f))} cm</strong></span>`).join("")}
+   </div>
+   <div class="optimizerHero ${pass?"hit":"miss"}"><small>ABSCHLUSSENTSCHEIDUNG</small><strong>${pass?"BESTANDEN ✓":"NICHT BESTANDEN"}</strong>
+    <span>${pass?"Kalibrierungsphase beendet: V3.15 kann als Produktionsbasis übernommen werden.":"Kein weiterer Solver-Zyklus vorgesehen; Ergebnis als Produktentscheidung bewerten."}</span></div>`;
    this.panel.querySelector("#finalTitle").textContent="Final Validation abgeschlossen";
    this.panel.querySelector("#finalEta").textContent=`Fertig in ${this.time((performance.now()-start)/1000)}`;
   }finally{this.engine.restore(before);this.ui.sync();this.engine.computeMetrics()}

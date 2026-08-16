@@ -310,3 +310,22 @@ dataset reproduces the same frozen candidate rather than performing new tuning.
 
 The rebuilt model is then stored under a dedicated V3.13 frozen-model key for future reloads.
 Final Validation still evaluates only the deterministic 20% holdout.
+
+
+## V3.14
+Final V3.11 + constrained post-hoc waist-depth repair. Final Validation compares Baseline → V3.11 → V3.14 on the same 20% holdout. No further solver iteration is planned after this run.
+
+
+## V3.15 — Coupled Cross-Section Solver
+
+Rather than repairing waist depth in isolation, V3.15 treats anatomical cross-sections as coupled geometry.
+
+Training targets:
+- Chest: circumference + chest breadth + chest depth.
+- Waist: circumference + waist breadth + waist depth.
+- Hip/buttock: circumference + hip breadth. No hip-depth target is invented because the current ANSUR mapping does not provide one.
+- Neck circumference and neck-base circumference remain separate anatomical levels and are not combined artificially.
+
+The solver starts from the exact frozen V3.11 result, re-locks the directly known chest/waist/hip circumferences after every trial, and then uses remaining morph freedom to distribute each perimeter into breadth/depth according to the learned ANSUR shape targets. Low-confidence mappings remain down-weighted using the existing calibration-R² trust function. Shoulder, torso length and neck-base gains from V3.11 are protected by hard drift guards.
+
+Final Validation remains the same frozen holdout and compares Baseline → V3.11 → V3.15.
