@@ -301,3 +301,11 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
 .batchProgressTrack>div{height:100%;width:0%;border-radius:8px;background:#eee;transition:width .15s linear}
 
 #finalCheckpointInfo{margin:8px 0 10px}#finalCheckpointInfo b{color:#b9e8c0}
+
+/* V3.20 final calibration workflow */
+.fcStep{margin:12px 0;padding:12px;border:1px solid rgba(255,255,255,.08);border-radius:16px;background:rgba(25,25,29,.92)}
+.fcStepHead{display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center}
+.fcStepHead>span{display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:#eee;color:#111;font-weight:800;font-size:13px}
+.fcStepHead b{display:block;font-size:12px}.fcStepHead small{display:block;color:#888;font-size:8px;margin-top:2px}
+.fcStepHead>strong{font-size:8px;color:#777}.fcStepHead>strong.ok{color:#b9e8c0}
+.fcStep .generatorActions{margin-top:9px}.fcReset{margin:18px 0 30px;text-align:center}

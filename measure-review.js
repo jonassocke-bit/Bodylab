@@ -6,7 +6,7 @@ const MEASURES=[
  {id:"chest",title:"Brustumfang",ansur:"Chest Circumference",kind:"path",path:"measure-bust-circ",group:"Kernmaße",confidence:"mittel",
   simple:"Waagerechter Umfang um den Brustkorb auf der von ANSUR festgelegten Brusthöhe. Das Maßband liegt nur am Körper an und soll nicht einschnüren.",
   protocol:"ANSUR misst den horizontalen Brustumfang im anthropometrischen Stand. Die Messhöhe ist durch die Brust-/Bustpoint-Landmarks festgelegt; gemessen wird bei ruhiger Atmung.",
-  bodylab:"V3.10: horizontaler echter Mesh-Schnitt 4 cm über der alten MakeHuman-Bust-Schleife. Dadurch wird der Umfang begradigt und die revidierte Höhe tatsächlich gemessen."},
+  bodylab:"v3.20.0: horizontaler echter Mesh-Schnitt 4 cm über der alten MakeHuman-Bust-Schleife. Dadurch wird der Umfang begradigt und die revidierte Höhe tatsächlich gemessen."},
 
  {id:"waist",title:"Taillenumfang",ansur:"Waist Circumference (Omphalion)",kind:"path",path:"measure-waist-circ",group:"Kernmaße",confidence:"hoch",
   simple:"Waagerecht um den Rumpf auf Höhe der Mitte des Bauchnabels. Wichtig: ANSUR meint hier ausdrücklich nicht automatisch die schmalste Stelle der Taille.",
@@ -16,7 +16,7 @@ const MEASURES=[
  {id:"hip",title:"Hüft-/Gesäßumfang",ansur:"Buttock Circumference",kind:"path",path:"measure-hips-circ",group:"Kernmaße",confidence:"hoch",
   simple:"Waagerechter Umfang um die stärkste Stelle von Gesäß und Hüfte – auf Höhe der größten hinteren Ausladung des Gesäßes.",
   protocol:"ANSUR misst den horizontalen Umfang auf Höhe der maximalen hinteren Vorwölbung des Gesäßes. Das Maßband muss in einer horizontalen Ebene bleiben und darf das Gewebe nicht zusammendrücken.",
-  bodylab:"V3.10: horizontaler Mesh-Schnitt auf der bestätigten Hüft-/Gesäßhöhe; die frühere wobbelige Schleife dient nur noch als Positionsanker."},
+  bodylab:"v3.20.0: horizontaler Mesh-Schnitt auf der bestätigten Hüft-/Gesäßhöhe; die frühere wobbelige Schleife dient nur noch als Positionsanker."},
 
  {id:"shoulder",title:"Schulterbreite",ansur:"Biacromial Breadth",kind:"shoulder",group:"Kernmaße",confidence:"hoch",
   simple:"Gerade Strecke von einem knöchernen äußeren Schulterpunkt zum anderen. Nicht über die Rundung der Schultern messen.",
@@ -31,12 +31,12 @@ const MEASURES=[
  {id:"neck",title:"Halsumfang",ansur:"Neck Circumference",kind:"path",path:"measure-neck-circ",group:"Umfänge",confidence:"mittel",
   simple:"Umfang um den Hals an der für ANSUR definierten Hals-Messhöhe.",
   protocol:"ANSUR unterscheidet Halsumfang und Halsumfang an der Basis. Deshalb darf dieser Wert nicht automatisch mit „Neck Circumference, Base“ gleichgesetzt werden.",
-  bodylab:"V3.10: Halsumfang ist jetzt eine eigene horizontale Schnittebene 1,5 cm oberhalb des früheren Pfads."},
+  bodylab:"v3.20.0: Halsumfang ist jetzt eine eigene horizontale Schnittebene 1,5 cm oberhalb des früheren Pfads."},
 
  {id:"neckBase",title:"Halsumfang Basis",ansur:"Neck Circumference, Base",kind:"path",path:"measure-neck-circ",group:"Harness Blind",confidence:"mittel",
   simple:"Umfang am unteren Halsansatz – dort, wo der Hals in Schulter/Trapez übergeht.",
   protocol:"ANSUR führt „Neck Circumference, Base“ als eigenes Maß getrennt vom normalen Neck Circumference. Die Lage ist deshalb ausdrücklich als untere Halsbasis zu prüfen.",
-  bodylab:"V3.10: Halsbasis ist jetzt separat und liegt 0,5 cm unterhalb des früheren Halspfads. Die visuelle Vor-/Zurück-Korrektur bleibt dokumentiert, beeinflusst einen horizontalen Umfang aber nicht."},
+  bodylab:"v3.20.0: Halsbasis ist jetzt separat und liegt 0,5 cm unterhalb des früheren Halspfads. Die visuelle Vor-/Zurück-Korrektur bleibt dokumentiert, beeinflusst einen horizontalen Umfang aber nicht."},
 
  {id:"wrist",title:"Handgelenkumfang",ansur:"Wrist Circumference",kind:"path",path:"measure-wrist-circ",group:"Extremitäten",confidence:"hoch",
   simple:"Umfang um das Handgelenk an der definierten schmalen Handgelenkregion.",
@@ -46,17 +46,17 @@ const MEASURES=[
  {id:"thigh",title:"Oberschenkelumfang",ansur:"Thigh Circumference",kind:"path",path:"measure-thigh-circ",group:"Extremitäten",confidence:"mittel",
   simple:"Umfang um den rechten Oberschenkel an der von ANSUR definierten Messstelle, nicht einfach irgendwo an der dicksten Stelle.",
   protocol:"ANSUR verwendet eine standardisierte Oberschenkel-Messhöhe. Das Band liegt rechtwinklig zur Längsachse des Beins und komprimiert die Haut nicht.",
-  bodylab:"V3.10: eigener Mesh-Schnitt 7 cm oberhalb der früheren Oberschenkel-Schleife, orthogonal zur lokalen Oberschenkelachse."},
+  bodylab:"v3.20.0: eigener Mesh-Schnitt 7 cm oberhalb der früheren Oberschenkel-Schleife, orthogonal zur lokalen Oberschenkelachse."},
 
  {id:"calf",title:"Wadenumfang",ansur:"Calf Circumference",kind:"path",path:"measure-calf-circ",group:"Extremitäten",confidence:"hoch",
   simple:"Umfang um die Wade auf Höhe des größten Wadenumfangs.",
   protocol:"Direkt gemessener ANSUR-Wadenumfang an der maximalen Wadenausprägung.",
-  bodylab:"V3.10: Mesh-Schnitt orthogonal zur lokalen Unterschenkelachse auf der bestätigten Wadenhöhe."},
+  bodylab:"v3.20.0: Mesh-Schnitt orthogonal zur lokalen Unterschenkelachse auf der bestätigten Wadenhöhe."},
 
  {id:"ankle",title:"Knöchelumfang",ansur:"Ankle Circumference",kind:"path",path:"measure-ankle-circ",group:"Extremitäten",confidence:"hoch",
   simple:"Umfang um die Knöchelregion an der definierten ANSUR-Messhöhe.",
   protocol:"Direkt gemessener Umfang im Knöchelbereich. Nicht mit Heel-Ankle Circumference verwechseln, das zusätzlich über die Ferse läuft.",
-  bodylab:"V3.10: Mesh-Schnitt 3 cm unterhalb der früheren Knöchel-Schleife, orthogonal zur lokalen Unterschenkelachse."},
+  bodylab:"v3.20.0: Mesh-Schnitt 3 cm unterhalb der früheren Knöchel-Schleife, orthogonal zur lokalen Unterschenkelachse."},
 
  {id:"chestBreadth",title:"Brustbreite",ansur:"Chest Breadth",kind:"extent",path:"measure-bust-circ",axis:"x",group:"Harness Blind",confidence:"niedrig",
   simple:"Gerade horizontale Breite des Brustkorbs von links nach rechts – kein Umfang.",
@@ -66,7 +66,7 @@ const MEASURES=[
  {id:"chestDepth",title:"Brusttiefe",ansur:"Chest Depth",kind:"extent",path:"measure-bust-circ",axis:"z",group:"Harness Blind",confidence:"mittel",
   simple:"Gerade Tiefe des Brustkorbs von vorne nach hinten auf der festgelegten Brusthöhe.",
   protocol:"ANSUR misst die antero-posteriore Brusttiefe an einer definierten Brusthöhe mit einem Caliper. Das ist keine Oberflächenstrecke.",
-  bodylab:"V3.10: Brusttiefe wird mittig auf der Körperachse als gerade Vorderseite→Rückseite-Distanz durch den horizontalen Brustschnitt gemessen."},
+  bodylab:"v3.20.0: Brusttiefe wird mittig auf der Körperachse als gerade Vorderseite→Rückseite-Distanz durch den horizontalen Brustschnitt gemessen."},
 
  {id:"waistBreadth",title:"Taillenbreite",ansur:"Waist Breadth (Omphalion)",kind:"extent",path:"measure-waist-circ",axis:"x",group:"Harness Blind",confidence:"hoch",
   simple:"Gerade Breite des Rumpfs von links nach rechts auf Bauchnabelhöhe.",
@@ -91,7 +91,7 @@ const MEASURES=[
  {id:"upperarmCirc",title:"Oberarmumfang",ansur:"Biceps Circumference, Flexed",kind:"path",path:"measure-upperarm-circ",group:"Calibration Extra",confidence:"niedrig",
   simple:"ANSUR misst den Umfang des angespannten Oberarms. Das ist nicht dasselbe wie ein entspannter Oberarmumfang.",
   protocol:"Der ANSUR-Datensatz enthält „Biceps Circumference, Flexed“. Der Arm wird dafür in der vorgeschriebenen Flexions-/Anspannungsposition gemessen.",
-  bodylab:"V3.10: Umfang wird zumindest geometrisch orthogonal zur lokalen Oberarmachse gemessen. Der grundlegende Unterschied zu ANSURs angespanntem Bizeps bleibt bestehen und wird nicht künstlich wegkalibriert."},
+  bodylab:"v3.20.0: Umfang wird zumindest geometrisch orthogonal zur lokalen Oberarmachse gemessen. Der grundlegende Unterschied zu ANSURs angespanntem Bizeps bleibt bestehen und wird nicht künstlich wegkalibriert."},
 
  {id:"upperarmLength",title:"Oberarmlänge",ansur:"Acromion-Radiale Length",kind:"path",path:"measure-upperarm-length",group:"Calibration Extra",confidence:"hoch",
   simple:"Gerade/definierte Segmentlänge von der Schulterknochen-Landmarke Acromion bis zur Radiale-Landmarke am Ellenbogen.",
@@ -146,7 +146,7 @@ export class MeasureReviewLab{
  build(){
   const groups=["Alle",...new Set(MEASURES.map(x=>x.group))];
   this.panel.innerHTML=`<div class="mrSheetHandle"><span></span></div>
-  <div class="mrHead"><div><div class="sectionLabel">MESS-REVISION · V3.10</div><h2>Alle Messmethoden prüfen</h2><p>Referenzbeschreibung + aktuelle Body-Lab-Linie direkt am Modell.</p></div><button id="mrClose">Schließen</button></div>
+  <div class="mrHead"><div><div class="sectionLabel">MESS-REVISION · v3.20.0</div><h2>Alle Messmethoden prüfen</h2><p>Referenzbeschreibung + aktuelle Body-Lab-Linie direkt am Modell.</p></div><button id="mrClose">Schließen</button></div>
   <div class="mrFilters">${groups.map(g=>`<button data-g="${g}" class="${g==="Alle"?"active":""}">${g}</button>`).join("")}</div>
   <div class="mrBody"><div id="mrList" class="mrList"></div><div id="mrCard" class="mrCard"></div></div>
   <div class="mrFooter"><button id="mrExport">Revision exportieren</button><span id="mrProgress"></span></div>`;
@@ -220,9 +220,9 @@ export class MeasureReviewLab{
  }
  toggle(force){const show=force===undefined?this.panel.classList.contains("hidden"):!!force;this.panel.classList.toggle("hidden",!show);this.group.visible=show;document.getElementById("measureReviewToggle").classList.toggle("active",show);if(show){this.renderList();this.renderCard();this.draw()}}
  export(){
-  const out={build:"BODY LAB v3.10.0",type:"full-measurement-protocol-review",exportedAt:new Date().toISOString(),
+  const out={build:"BODY LAB v3.20.0",type:"full-measurement-protocol-review",exportedAt:new Date().toISOString(),
    methodology:"Descriptions distinguish official/ANSUR target meaning from the current Body Lab mapping. Derived/internal measures are marked explicitly.",
    reviews:MEASURES.map(m=>({id:m.id,title:m.title,reference:m.ansur,group:m.group,confidence:m.confidence,referenceDescription:m.simple,protocol:m.protocol,bodyLabMapping:m.bodylab,...(this.data[m.id]||{})}))};
-  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="BODYLAB_FULL_MEASURE_REVIEW_V3.9.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)
+  const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="BODYLAB_FULL_MEASURE_REVIEW_v3.20.0.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)
  }
 }

@@ -343,3 +343,31 @@ Candidate count, step schedule, real mesh evaluation, circumference re-locks, tr
 
 Final Validation saves a checkpoint after every completed person in IndexedDB and can resume from the next
 person after iOS suspension, app switching or reload.
+
+
+## V3.20 — Final Calibration Workflow
+
+Calibration UI is intentionally reduced to five steps:
+
+1. Freeze deterministic data split.
+   - ~70% Training
+   - ~15% Validation
+   - ~15% Final Test
+   - first 50 Final rows are conservatively excluded because the user already inspected 50 former holdout persons.
+
+2. Train hidden-geometry predictors only on Training.
+   Core-5 inputs: gender, height, weight/BMI, chest, waist, hip and simple ratios.
+   Hidden targets: shoulder, shoulder-to-crotch, chest breadth/depth, waist breadth/depth, hip breadth, neck base.
+
+3. Validation / one-time residual calibration.
+   Validation may still influence the model. Only a conservative additive offset (80% of validation bias)
+   is learned per target; no iterative solver tweaking is exposed.
+
+4. Freeze.
+   Model + validation offsets are copied into a frozen final model. Training/validation controls lock.
+
+5. Final Test.
+   Uses only the final split minus the 50 conservatively excluded already-seen rows.
+   No model updates occur. Reports MAE/P90 overall, women/men, and per target.
+
+Legacy V3.7/V3.11/V3.12/V3.15 calibration experiments and sensitivity-lab UI are removed from the visible Calibration menu.

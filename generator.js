@@ -36,7 +36,7 @@ export class MeasurementLab{
  render(){
   this.panel.innerHTML=`
    <div class="generatorHead">
-    <div><strong>BODY LAB · MEASUREMENT LAB</strong><small>V3.16 · revidierte Messmethoden → MakeHuman-Körper</small></div>
+    <div><strong>BODY LAB · MEASUREMENT LAB</strong><small>v3.20.0 · revidierte Messmethoden → MakeHuman-Körper</small></div>
     <button id="genClose">Schließen</button>
    </div>
 
@@ -79,7 +79,7 @@ export class MeasurementLab{
    <div class="measureCards">
     ${this.measureCard("genBust","Brustumfang","Um die stärkste Stelle von Brust/Brustkorb, Maßband waagerecht und nicht einschnüren.","cm",true)}
     ${this.measureCard("genWaist","Taillenumfang","An der natürlichen Taille messen; entspannt stehen und normal ausatmen.","cm",true)}
-    ${this.measureCard("genTorso","Schulter → Schritt","Vertikale Höhe vom äußeren Schulterpunkt bis zum Schritt/Inseam. V3.1.1 misst das direkt über feste MakeHuman-Mesh-Landmarks.","cm",true)}
+    ${this.measureCard("genTorso","Schulter → Schritt","Vertikale Höhe vom äußeren Schulterpunkt bis zum Schritt/Inseam. v3.20.0 misst das direkt über feste MakeHuman-Mesh-Landmarks.","cm",true)}
    </div>
 
    <div class="generatorSectionTitle">OPTIONALE KONTROLLMASSE</div>
@@ -90,12 +90,12 @@ export class MeasurementLab{
    <div class="measureCards">
     ${this.optionalCard("genHip","Hüftumfang","Stärkste Stelle über Hüfte/Gesäß.","measure-hips-circ")}
     ${this.optionalCard("genUnderbust","Unterbrustumfang","Direkt unter der Brust, horizontal.","measure-underbust-circ")}
-    ${this.optionalCard("genShoulder","Schulterbreite","Gerade 3D-Strecke zwischen den äußeren Schulterpunkten. V3.1.1 verwendet dafür zwei feste, symmetrische MakeHuman-Mesh-Landmarks.","measure-shoulder-dist")}
+    ${this.optionalCard("genShoulder","Schulterbreite","Gerade 3D-Strecke zwischen den äußeren Schulterpunkten. v3.20.0 verwendet dafür zwei feste, symmetrische MakeHuman-Mesh-Landmarks.","measure-shoulder-dist")}
    </div>
 
    <div class="generatorActions">
     <button id="genRun" class="primary">Modell generieren</button>
-    <button id="genV37Info">V3.7 Kalibrierung</button>
+    <button id="genV37Info">v3.20.0 Kalibrierung</button>
     <button id="genLandmarks">Messpunkte anzeigen</button>
     <button id="genSaveProfile">Testprofil speichern</button>
     <button id="genExport" disabled>Report exportieren</button>
@@ -105,7 +105,7 @@ export class MeasurementLab{
   `;
   this.panel.querySelector("#genClose").onclick=()=>this.panel.classList.add("hidden");
   this.panel.querySelector("#genRun").onclick=()=>this.run();
-  this.panel.querySelector("#genV37Info").onclick=()=>alert("V3.7 wird zunächst im Calibration Lab per A/B validiert. Erst nach nachgewiesener Verbesserung wird die Formkorrektur standardmäßig im Generator aktiviert.");
+  this.panel.querySelector("#genV37Info").onclick=()=>alert("v3.20.0 wird zunächst im Calibration Lab per A/B validiert. Erst nach nachgewiesener Verbesserung wird die Formkorrektur standardmäßig im Generator aktiviert.");
   this.panel.querySelector("#genLandmarks").onclick=()=>{
    const visible=this.engine.toggleLandmarks();
    this.panel.querySelector("#genLandmarks").textContent=visible?"Messpunkte ausblenden":"Messpunkte anzeigen";
@@ -339,12 +339,12 @@ export class MeasurementLab{
   if(v.underbust)rows.push({key:"underbust",label:"Unterbrustumfang",target:v.underbust,actual:o.underbust,used:v.useUnderbust,unit:"cm"});
   if(v.shoulder)rows.push({key:"shoulder",label:"Schulterbreite",target:v.shoulder,actual:o.shoulder,used:v.useShoulder,unit:"cm",landmark:true});
   this.lastReport={
-   build:"BODY LAB v3.16.0",
+   build:"BODY LAB v3.20.0",
    createdAt:new Date().toISOString(),
    inputs:v,rows,
    state:this.engine.snapshot(),
    notes:{
-    landmarks:"V3.1.1: shoulderL=1602, shoulderR=8274, crotch=4376.",
+    landmarks:"v3.20.0: shoulderL=1602, shoulderR=8274, crotch=4376.",
     torso:"Vertikale Y-Differenz zwischen mittlerer Schulterhöhe und Crotch-Landmark.",
     shoulder:"Direkte 3D-Distanz zwischen linkem und rechtem Shoulder-Landmark.",
     weight:"Gewicht ist der MakeHuman-artige Mesh/BSA-Schätzwert der App."
@@ -385,7 +385,7 @@ export class MeasurementLab{
   if(!this.lastReport)return;
   const blob=new Blob([JSON.stringify(this.lastReport,null,2)],{type:"application/json"});
   const u=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=u;a.download="Body-Lab-v3.1.1-Measurement-Report.json";a.click();
+  a.href=u;a.download="Body-Lab-v3.20.0-Measurement-Report.json";a.click();
   setTimeout(()=>URL.revokeObjectURL(u),1000);
  }
 }
