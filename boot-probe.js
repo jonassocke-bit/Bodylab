@@ -1,12 +1,12 @@
 
 export async function probeBootModules(){
  const mods=[
-  "./modifier-config.js?v=3.23.1",
-  "./body-morphs.js?v=3.23.1",
-  "./face-config.js?v=3.23.1",
-  "./face-morphs.js?v=3.23.1",
-  "./exact-macro-meta.js?v=3.23.1",
-  "./rig-data.js?v=3.23.1"
+  "./modifier-config.js?v=3.24.0",
+  "./body-morphs.js?v=3.24.0",
+  "./face-config.js?v=3.24.0",
+  "./face-morphs.js?v=3.24.0",
+  "./exact-macro-meta.js?v=3.24.0",
+  "./rig-data.js?v=3.24.0"
  ];
  for(const u of mods){
   try{await import(u)}

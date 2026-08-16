@@ -1,4 +1,4 @@
-# BODY LAB v3.23.1
+# BODY LAB v3.24.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -471,3 +471,16 @@ The result classifies the likely cause as:
 
 ## v3.23.1 — Result aggregation fix
 Step 6 now aggregates all eight mesh measurements directly against their ANSUR/import aliases. This fixes missing chestBreadth/chestDepth output. Mesh fitter and calibration logic are unchanged from v3.23.0.
+
+
+## v3.24.0 — Female Thorax + Breast Projection
+
+Production-candidate mesh-fit strategy:
+- male training split only is used to fit a ridge model for thorax/base chest depth from inputs available in production (height, weight, chest, waist, hip, age);
+- female ANSUR Chest Depth remains the total Bustpoint depth;
+- for women, breast projection is temporarily neutralized, torso depth is fitted to the male-derived thorax target, and the remaining total depth is restored using Breast Size plus breast-local modifiers only;
+- for men, torso-scale-depth is fitted directly to total Chest Depth;
+- the old global cross-section optimizer is intentionally not used in this V3.24 path, avoiding the hip-width damage seen in V3.23;
+- 100-person validation reports overall MAE, female/male chest-depth MAE, all 8 measures, and protected-measure regressions.
+
+If V3.24 passes, the only remaining calibration step is a frozen final holdout, then production freeze.
