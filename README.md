@@ -241,7 +241,7 @@ Mess-Revision is now a true bottom sheet (~43–44% viewport height). The 3D man
 Expanded revision catalog to every measurement currently used by calibration/solver plus relevant existing MakeHuman ruler paths. Each entry explicitly separates reference meaning, ANSUR/protocol note, current Body Lab implementation, confidence/mapping status, and user revision. Derived and non-equivalent mappings are labeled rather than silently treated as exact.
 
 
-## V3.10.0 — User-validated Measurement Protocol
+## V3.11.0 — User-validated Measurement Protocol
 
 The complete V3.9 user review is bundled as `measurement-review-v39.json`.
 
@@ -261,4 +261,21 @@ Confirmed measurements remain unchanged.
 Crucially, Generator, Batch Lab, Blind Validation, Sensitivity and Measurement Calibration now call the
 same revised engine measurement functions. The old V3.7 calibrated-shape correction is deliberately
 disabled because its embedded V3.6 calibration coefficients were learned against the previous
-measurement protocol. Re-run V3.10 calibration before training the next solver candidate.
+measurement protocol. Re-run V3.11 calibration before training the next solver candidate.
+
+
+## V3.11 — Sensitivity-driven calibrated solver candidate
+
+Uses the user's V3.10 measurement-calibration export and V3.10 142-control sensitivity export.
+Hidden harness targets are learned from Core-5 with an 80/20 subject split. Morph corrections are
+computed through weighted ridge least squares on the measured sensitivity Jacobian rather than
+hand-picked coordinate descent.
+
+Measurement mappings with R² < 0.10 are excluded from geometry correction. Low-R² mappings are
+down-weighted. This intentionally prevents apparently impressive mean-offset corrections (for
+example the old waist-back-length mapping) from steering individual body shape.
+
+Only interpretable regional groups (`measure`, `torso`, `hip`, `breast`, `stomach`, `buttocks`,
+`pelvis`) are eligible; highly entangled ELVS bodyshape/endocrine controls are excluded.
+
+Production generation remains unchanged until the built-in A/B validator shows a real improvement.
