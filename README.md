@@ -289,7 +289,7 @@ Production generation remains unchanged until the built-in A/B validator shows a
 - Morphs with strong waist-depth spill are penalized; fewer morphs, stronger regularization and smaller correction steps are used.
 
 
-## V3.13 — Final Validation + adaptive progress/ETA
+## V3.13.1 — Final Validation + adaptive progress/ETA
 Batch Lab now shows percentage, completed/total model runs, a progress bar and a live ETA. The ETA
 uses the median time of the most recent completed model runs, so it adapts automatically to both
 person count and scenario/parameter count.
@@ -297,3 +297,16 @@ person count and scenario/parameter count.
 Final Validation uses the frozen V3.11 solver and only the deterministic 20% holdout rows that were
 excluded from its hidden-geometry training split. It performs no tuning. The final report includes
 mean MAE, P90, female/male results and per-harness-measure comparisons.
+
+
+## V3.13.1 — Frozen V3.11 deterministic rebuild
+
+Fixes Final Validation when the legacy V3.11 localStorage model is missing.
+
+If no frozen V3.11 model is found, Final Validation now rebuilds it automatically from the
+currently restored ANSUR dataset using the exact original V3.11 training function. The original
+deterministic `sourceRow` 80/20 split, feature vector and ridge settings are reused, so the same
+dataset reproduces the same frozen candidate rather than performing new tuning.
+
+The rebuilt model is then stored under a dedicated V3.13 frozen-model key for future reloads.
+Final Validation still evaluates only the deterministic 20% holdout.

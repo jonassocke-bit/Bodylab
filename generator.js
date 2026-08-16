@@ -36,7 +36,7 @@ export class MeasurementLab{
  render(){
   this.panel.innerHTML=`
    <div class="generatorHead">
-    <div><strong>BODY LAB · MEASUREMENT LAB</strong><small>V3.13 · revidierte Messmethoden → MakeHuman-Körper</small></div>
+    <div><strong>BODY LAB · MEASUREMENT LAB</strong><small>V3.13.1 · revidierte Messmethoden → MakeHuman-Körper</small></div>
     <button id="genClose">Schließen</button>
    </div>
 
@@ -339,7 +339,7 @@ export class MeasurementLab{
   if(v.underbust)rows.push({key:"underbust",label:"Unterbrustumfang",target:v.underbust,actual:o.underbust,used:v.useUnderbust,unit:"cm"});
   if(v.shoulder)rows.push({key:"shoulder",label:"Schulterbreite",target:v.shoulder,actual:o.shoulder,used:v.useShoulder,unit:"cm",landmark:true});
   this.lastReport={
-   build:"BODY LAB v3.13.0",
+   build:"BODY LAB v3.13.1",
    createdAt:new Date().toISOString(),
    inputs:v,rows,
    state:this.engine.snapshot(),

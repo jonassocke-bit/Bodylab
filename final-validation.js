@@ -14,7 +14,7 @@ export class FinalValidationV313{
  }
  inject(){
   const wrap=document.createElement("div");
-  wrap.innerHTML=`<div class="generatorSectionTitle">E · FINAL VALIDATION · V3.13</div>
+  wrap.innerHTML=`<div class="generatorSectionTitle">E · FINAL VALIDATION · V3.13.1</div>
   <div class="generatorIntro compact">
    Abschlussprüfung des <b>eingefrorenen V3.11-Solvers</b>. Verwendet werden ausschließlich Personen aus seinem
    deterministischen 20%-Holdout; an diesen Personen wurde das Hidden-Geometry-Modell nicht trainiert.
@@ -42,8 +42,38 @@ export class FinalValidationV313{
   this.panel.querySelector("#finalEta").textContent=done>=3?`ca. ${this.time(med*(total-done))} verbleibend`:"Restzeit wird geschätzt …";
   this.panel.querySelector("#finalTitle").textContent=`Final Validation · ${done}/${total}`;
  }
+ async ensureFrozenModel(){
+  if(this.solver?.trained())return true;
+
+  const rows=(this.batch?.rows||[]).filter(r=>[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite));
+  if(rows.length<50)return false;
+
+  // Rebuild the exact V3.11 hidden-geometry model deterministically.
+  // FrozenSolverV311.train() uses the same fixed feature set, ridge lambda and sourceRow hash split
+  // as the original V3.11 implementation, so identical rows reproduce the same model.
+  this.solver.train(rows);
+
+  const model=this.solver.model;
+  if(!model?.targets)return false;
+
+  // Store an explicit frozen copy as well, independent of the legacy solver key.
+  try{
+   localStorage.setItem("bodylab_v313_frozen_v311_model",JSON.stringify(model));
+  }catch(e){}
+
+  return true;
+ }
+
  async run(){
-  if(!this.solver?.trained()){alert("Das eingefrorene V3.11-Modell ist auf diesem Gerät nicht mehr gespeichert. Bitte nicht neu tunen; wir müssen dann V3.11 einmal reproduzierbar auf dem Trainingssplit wiederherstellen.");return}
+  if(!this.solver?.trained()){
+   const title=this.panel.querySelector("#finalTitle");
+   const prog=this.panel.querySelector("#finalProgress");
+   if(prog)prog.classList.remove("hidden");
+   if(title)title.textContent="V3.11 wird reproduzierbar wiederhergestellt …";
+   const ok=await this.ensureFrozenModel();
+   if(!ok){alert("V3.11 konnte aus dem gespeicherten Datensatz nicht wiederhergestellt werden.");return}
+   if(title)title.textContent="V3.11 wiederhergestellt";
+  }
   const candidates=(this.batch?.rows||[]).filter(r=>isHoldout(r)&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite));
   if(!candidates.length){alert("Keine V3.11-Holdout-Personen im gespeicherten Datensatz gefunden.");return}
   const cap=Number(this.panel.querySelector("#finalN").value)||candidates.length,rows=candidates.slice(0,Math.min(cap,candidates.length));

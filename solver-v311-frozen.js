@@ -56,7 +56,11 @@ function matMul(A,B){return A.map(r=>B[0].map((_,j)=>r.reduce((s,x,k)=>s+x*B[k][
 function matVec(A,v){return A.map(r=>r.reduce((s,x,i)=>s+x*v[i],0))}
 
 export class FrozenSolverV311{
- constructor(engine,ui,lab,batch){this.engine=engine;this.ui=ui;this.lab=lab;this.batch=batch;this.model=null;this.load()}
+ constructor(engine,ui,lab,batch){
+  this.engine=engine;this.ui=ui;this.lab=lab;this.batch=batch;this.model=null;
+  try{this.model=JSON.parse(localStorage.getItem("bodylab_v313_frozen_v311_model")||"null")}catch(e){}
+  if(!this.model)this.load();
+ }
  load(){try{this.model=JSON.parse(localStorage.getItem(STORE)||"null")}catch(e){}}
  trained(){return !!this.model?.targets}
  train(rows){
@@ -67,7 +71,9 @@ export class FrozenSolverV311{
    targets[k]={beta:f.beta,nTrain:f.n,nTest:es.length,holdoutMAE:mae(es),holdoutBias:mean(es),trust:trust(k)};
   }
   this.model={build:"BODY LAB v3.11.0",createdAt:new Date().toISOString(),rows:usable.length,targets};
-  localStorage.setItem(STORE,JSON.stringify(this.model));return this.model;
+  localStorage.setItem(STORE,JSON.stringify(this.model));
+  try{localStorage.setItem("bodylab_v313_frozen_v311_model",JSON.stringify(this.model))}catch(e){}
+  return this.model;
  }
  hiddenTarget(r,k){const t=this.model?.targets?.[k];return t?predict(t.beta,r):NaN}
  current(){
