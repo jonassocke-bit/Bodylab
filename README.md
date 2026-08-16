@@ -1,4 +1,4 @@
-# BODY LAB v3.24.0
+# BODY LAB v3.25.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -484,3 +484,19 @@ Production-candidate mesh-fit strategy:
 - 100-person validation reports overall MAE, female/male chest-depth MAE, all 8 measures, and protected-measure regressions.
 
 If V3.24 passes, the only remaining calibration step is a frozen final holdout, then production freeze.
+
+
+## v3.25.0 — Local Breast Projection Fitter
+
+This build keeps torso-scale-depth clamped to ±100%.
+For women:
+1. estimate thorax/base chest depth from the male training split,
+2. fit torso depth only to that thorax target,
+3. freeze torso depth,
+4. create the remaining Bustpoint projection only with Breast Size, Breast Firmness and local breast controls:
+   `breast-trans`, `breast-dist`, `breast-point`, `breast-volume-vert`,
+5. strongly penalize regressions in chest breadth, waist breadth/depth, hip breadth, shoulder, torso and neck base.
+
+Men keep the direct torso-depth path that already performed well in V3.24.
+
+If the 100-person validation passes, the only remaining calibration operation is an untouched final holdout followed by production freeze.

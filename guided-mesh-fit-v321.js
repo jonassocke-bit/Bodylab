@@ -10,7 +10,7 @@ export class GuidedMeshFitV321{
  save(){localStorage.setItem(STORE,JSON.stringify(this.state))}
  rows(){return (this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,5)}
  inject(){const h=document.createElement('div');h.id='meshFitV321';h.innerHTML=`
- <div class="generatorSectionTitle">MESH-FIT · V3.24.0</div>
+ <div class="generatorSectionTitle">MESH-FIT · V3.25.0</div>
  <div class="generatorIntro"><b>Kein weiterer Kalibrierungslauf.</b> Dieser Test prüft an nur 5 Personen die technische Kette: Morphwert → Meshänderung → Messwertänderung → Umfangs-Verriegelung. Erst wenn diese Kette nachweislich funktioniert, wird der 100-Personen-Fit wieder freigeschaltet.</div>
  <section class="fcStep"><div class="fcStepHead"><span>1</span><div><b>5 Personen diagnostizieren</b><small>ca. 1–3 Minuten · verändert kein gespeichertes Modell</small></div><strong id="mdStatus">BEREIT</strong></div>
  <div class="generatorActions"><button id="mdRun" class="primary">Diagnose starten</button><button id="mdAbort">Abbrechen</button></div>
@@ -49,8 +49,20 @@ export class GuidedMeshFitV321{
  <div id="fit24Progress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>V3.24 Mesh-Fit</b><span id="fit24Pct">0%</span></div><div class="batchProgressTrack"><div id="fit24Bar"></div></div><div class="batchProgressMeta"><span id="fit24Count">0 / 100</span><span id="fit24Eta">Restzeit wird geschätzt …</span></div></div>
  <div id="fit24Result" class="calResults"></div>
  <div class="batchInfo"><b>Danach</b><span>Wenn Gesamt-MAE und insbesondere Brusttiefe klar besser sind, folgt nur noch ein Final-Holdout auf unangetasteten Personen. Danach wird der Solver + V3.24-Mesh-Fitter eingefroren.</span></div>
+ </section>
+ <section class="fcStep"><div class="fcStepHead"><span>8</span><div><b>V3.25 Lokale Brustprojektion</b><small>100 Validation-Personen · finale Korrekturstrategie</small></div><strong id="fit25Status">BEREIT</strong></div>
+ <div class="generatorIntro">
+  <b>d8 bleibt auf ±100 % begrenzt.</b> Danach wird die bei Frauen noch fehlende Gesamttiefe
+  ausschließlich mit <b>Brust-lokalen Reglern</b> erzeugt. Der Optimierer darf Brusttiefe verbessern,
+  aber Brustbreite, Taille, Hüfte, Torso und Halsbasis nicht mehr deutlich verschlechtern.
+  Männer bleiben auf dem bewährten direkten Torso-Tiefenpfad.
+ </div>
+ <div class="generatorActions"><button id="fit25Run" class="primary">100 Personen V3.25 fitten</button><button id="fit25Abort">Abbrechen</button></div>
+ <div id="fit25Progress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>V3.25 Mesh-Fit</b><span id="fit25Pct">0%</span></div><div class="batchProgressTrack"><div id="fit25Bar"></div></div><div class="batchProgressMeta"><span id="fit25Count">0 / 100</span><span id="fit25Eta">Restzeit wird geschätzt …</span></div></div>
+ <div id="fit25Result" class="calResults"></div>
+ <div class="batchInfo"><b>Wenn dieser Test besteht</b><span>Dann keine weitere Kalibrierung: nur noch Final-Holdout auf unangetasteten Personen und danach einfrieren.</span></div>
  </section>`;this.panel.appendChild(h)}
- bind(){this.panel.querySelector('#mdRun').onclick=()=>this.run();this.panel.querySelector('#mdAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#objRun').onclick=()=>this.runObjective();this.panel.querySelector('#objAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#auditRun').onclick=()=>this.runTargetAudit();this.panel.querySelector('#auditAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#limitRun').onclick=()=>this.runLimitGenderAudit();this.panel.querySelector('#limitAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#fit23Run').onclick=()=>this.runV323Fit();this.panel.querySelector('#fit23Abort').onclick=()=>{this.abort=true};this.panel.querySelector('#fit24Run').onclick=()=>this.runV324Fit();this.panel.querySelector('#fit24Abort').onclick=()=>{this.abort=true}}
+ bind(){this.panel.querySelector('#mdRun').onclick=()=>this.run();this.panel.querySelector('#mdAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#objRun').onclick=()=>this.runObjective();this.panel.querySelector('#objAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#auditRun').onclick=()=>this.runTargetAudit();this.panel.querySelector('#auditAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#limitRun').onclick=()=>this.runLimitGenderAudit();this.panel.querySelector('#limitAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#fit23Run').onclick=()=>this.runV323Fit();this.panel.querySelector('#fit23Abort').onclick=()=>{this.abort=true};this.panel.querySelector('#fit24Run').onclick=()=>this.runV324Fit();this.panel.querySelector('#fit24Abort').onclick=()=>{this.abort=true};this.panel.querySelector('#fit25Run').onclick=()=>this.runV325Fit();this.panel.querySelector('#fit25Abort').onclick=()=>{this.abort=true}}
  sync(){if(this.state.result)this.render(this.state.result)}
  current(){const h=this.engine.harnessBlindMetrics();return {shoulder:this.engine.shoulderBreadthCm(),torso:this.engine.shoulderToCrotchCm(),chestBreadth:h.chestBreadth,chestDepth:h.chestDepth,waistBreadth:h.waistBreadth,waistDepth:h.waistDepth,hipBreadth:h.hipBreadth,neckBase:h.neckBase}}
  meshSample(){const a=this.engine.body?.geometry?.attributes?.position?.array;if(!a)return [];const out=[];const step=Math.max(3,Math.floor(a.length/180));for(let i=0;i<a.length;i+=step)out.push(a[i]);return out}
@@ -463,6 +475,189 @@ export class GuidedMeshFitV321{
   if(r.gender===0)return {gender:'Frauen',...(await this.femaleChestDecomposedFit(r,tgt))};
   return {gender:'Männer',...(await this.maleChestFit(r,tgt))};
  }
+
+ localBreastControls(){
+  // Keep only local breast shape/projection controls. Exclude generic body/torso/hip controls.
+  const allowed=/^(breast-(trans|dist|point|volume-vert))$/i,out=[];
+  for(const group of this.engine.groups||[])for(const c of group.controls||[]){
+   if(c?.id&&allowed.test(c.target||''))out.push(c);
+  }
+  return out;
+ }
+ async scoreFemaleLocalState(r,tgt,baselineProtected){
+  const cur=this.current();
+  const weights={chestDepth:8.0,chestBreadth:3.0,waistBreadth:2.0,waistDepth:2.0,hipBreadth:2.5,shoulder:1.5,torso:2.0,neckBase:1.5};
+  let s=0,n=0;
+  for(const [k,w] of Object.entries(weights)){
+   if(!Number.isFinite(cur[k])||!Number.isFinite(tgt[k]))continue;
+   const scale=Math.max(10,Math.abs(tgt[k])),e=(cur[k]-tgt[k])/scale;
+   s+=w*e*e;n+=w;
+  }
+  // Strong guard against damaging already acceptable geometry.
+  const guardLimits={chestBreadth:.35,waistBreadth:.30,waistDepth:.30,hipBreadth:.30,shoulder:.30,torso:.30,neckBase:.30};
+  let guard=0;
+  for(const [k,lim] of Object.entries(guardLimits)){
+   if(!Number.isFinite(cur[k])||!Number.isFinite(baselineProtected[k]))continue;
+   const d=Math.abs(cur[k]-baselineProtected[k]);
+   if(d>lim)guard+=(d-lim)*(d-lim)*18;
+  }
+  return {score:n?(s+guard)/n:Infinity,cur};
+ }
+ async optimizeFemaleProjectionLocal(r,tgt,baselineProtected){
+  const controls=this.localBreastControls();
+  // Search Breast Size first, with firmness as a small secondary degree of freedom.
+  let best={score:Infinity,size:this.engine.state.breastSize,firm:this.engine.state.breastFirmness,direct:{}};
+  for(const size of [0,.15,.30,.45,.60,.75,.90,1.0]){
+   for(const firm of [.25,.50,.75]){
+    this.engine.state.breastSize=size;this.engine.state.breastFirmness=firm;
+    for(const c of controls)this.engine.directState[c.id]=0;
+    await this.refreshLock(r);
+    const q=await this.scoreFemaleLocalState(r,tgt,baselineProtected);
+    if(q.score<best.score)best={score:q.score,size,firm,direct:{},cur:q.cur};
+   }
+  }
+  this.engine.state.breastSize=best.size;this.engine.state.breastFirmness=best.firm;
+  for(const c of controls)this.engine.directState[c.id]=0;
+  await this.refreshLock(r);
+
+  // Coordinate descent ONLY across local breast controls.
+  for(const step of [.25,.12,.06,.03]){
+   for(const c of controls){
+    const curV=Number(this.engine.directState[c.id]||0);
+    let local={v:curV,...(await this.scoreFemaleLocalState(r,tgt,baselineProtected))};
+    for(const dir of [-1,1]){
+     const v=Math.max(-1,Math.min(1,curV+dir*step));
+     this.engine.directState[c.id]=v;await this.refreshLock(r);
+     const q=await this.scoreFemaleLocalState(r,tgt,baselineProtected);
+     if(q.score<local.score)local={v,...q};
+    }
+    this.engine.directState[c.id]=local.v;await this.refreshLock(r);
+   }
+  }
+
+  return {
+   state:this.current(),
+   breastSize:this.engine.state.breastSize,
+   breastFirmness:this.engine.state.breastFirmness,
+   local:Object.fromEntries(controls.map(c=>[c.target,Number(this.engine.directState[c.id]||0)]))
+  };
+ }
+ async femaleV325Fit(r,tgt){
+  const solver=this.calibration?.workflow?.solver;
+  // Only the stable non-cross-section correction is allowed before the chest-specific fit.
+  if(solver?.correct)await solver.correct(r);
+  await this.refreshLock(r);
+
+  const totalTarget=tgt.chestDepth;
+  let thoraxTarget=this.predictMaleThorax(r);
+  thoraxTarget=Math.min(totalTarget,Math.max(totalTarget*.58,thoraxTarget));
+
+  // Neutralize breast projection while fitting torso depth.
+  const breastControls=this.localBreastControls();
+  this.engine.state.breastSize=0;this.engine.state.breastFirmness=.5;
+  for(const c of breastControls)this.engine.directState[c.id]=0;
+  await this.refreshLock(r);
+
+  const d8=await this.scanD8ToTarget(r,thoraxTarget,tgt);
+  // From here on d8 is frozen. This snapshot is the protected thorax/base geometry.
+  const protectedBase=this.current();
+
+  const local=await this.optimizeFemaleProjectionLocal(r,tgt,protectedBase);
+  return {
+   thoraxTarget,totalTarget,d8:d8?.value,
+   breastSize:local.breastSize,breastFirmness:local.breastFirmness,
+   local:local.local,state:this.current()
+  };
+ }
+ async maleV325Fit(r,tgt){
+  // Same conservative male path that already worked well in V3.24.
+  const solver=this.calibration?.workflow?.solver;
+  if(solver?.correct)await solver.correct(r);
+  await this.refreshLock(r);
+  const d8=await this.scanD8ToTarget(r,tgt.chestDepth,tgt);
+  return {d8:d8?.value,state:this.current()};
+ }
+ async fitV325Person(r){
+  await this.baseline(r);
+  const tgt=this.target(r);
+  return r.gender===0?{gender:'Frauen',...(await this.femaleV325Fit(r,tgt))}:{gender:'Männer',...(await this.maleV325Fit(r,tgt))};
+ }
+ async runV325Fit(){
+  const rows=(this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,100);
+  if(rows.length<50){alert('Nicht genug Validation-Personen geladen.');return}
+  const snap=this.engine.snapshot(),samples=[],before=[],after=[],femaleBefore=[],femaleAfter=[],maleBefore=[],maleAfter=[];
+  const perBefore=Object.fromEntries(TARGETS.map(([k])=>[k,[]])),perAfter=Object.fromEntries(TARGETS.map(([k])=>[k,[]]));
+  const sexChest={Frauen:{b:[],a:[]},Männer:{b:[],a:[]}},details=[];
+  const prog=this.panel.querySelector('#fit25Progress');prog.classList.remove('hidden');this.panel.querySelector('#fit25Status').textContent='LÄUFT';this.abort=false;
+  const thoraxModel=this.trainMaleThoraxModel();
+
+  try{
+   for(let i=0;i<rows.length;i++){
+    if(this.abort)break;
+    const t0=performance.now(),r=rows[i];
+    await this.baseline(r);
+    const bMesh=this.current(),bErr=[],gl=r.gender===0?'Frauen':'Männer',rawCD=this.auditRaw(r,'chestDepth');
+    for(const [k] of TARGETS){
+     const raw=this.auditRaw(r,k),mv=bMesh[k];
+     if(Number.isFinite(raw)&&Number.isFinite(mv)){const e=Math.abs(mv-raw);perBefore[k].push(e);bErr.push(e)}
+    }
+    if(Number.isFinite(rawCD)&&Number.isFinite(bMesh.chestDepth))sexChest[gl].b.push(Math.abs(bMesh.chestDepth-rawCD));
+    const bMae=bErr.length?bErr.reduce((s,v)=>s+v,0)/bErr.length:NaN;
+    if(Number.isFinite(bMae)){before.push(bMae);(r.gender===0?femaleBefore:maleBefore).push(bMae)}
+
+    const fit=await this.fitV325Person(r),aMesh=this.current(),aErr=[];
+    for(const [k] of TARGETS){
+     const raw=this.auditRaw(r,k),mv=aMesh[k];
+     if(Number.isFinite(raw)&&Number.isFinite(mv)){const e=Math.abs(mv-raw);perAfter[k].push(e);aErr.push(e)}
+    }
+    if(Number.isFinite(rawCD)&&Number.isFinite(aMesh.chestDepth))sexChest[gl].a.push(Math.abs(aMesh.chestDepth-rawCD));
+    const aMae=aErr.length?aErr.reduce((s,v)=>s+v,0)/aErr.length:NaN;
+    if(Number.isFinite(aMae)){after.push(aMae);(r.gender===0?femaleAfter:maleAfter).push(aMae)}
+
+    if(details.length<8&&r.gender===0){
+     details.push({
+      raw:rawCD,target:this.target(r).chestDepth,thorax:fit.thoraxTarget,mesh:aMesh.chestDepth,
+      d8:fit.d8,size:fit.breastSize,local:fit.local
+     });
+    }
+
+    const sec=(performance.now()-t0)/1000;
+    if(sec>.01&&sec<300)samples.push(sec);if(samples.length>15)samples.shift();
+    const done=i+1,pct=100*done/rows.length,med=samples.length?[...samples].sort((a,b)=>a-b)[Math.floor(samples.length/2)]:NaN;
+    this.panel.querySelector('#fit25Pct').textContent=pct.toFixed(0)+'%';
+    this.panel.querySelector('#fit25Bar').style.width=pct+'%';
+    this.panel.querySelector('#fit25Count').textContent=`${done} / ${rows.length}`;
+    this.panel.querySelector('#fit25Eta').textContent=Number.isFinite(med)&&done>2?`ca. ${Math.max(0,Math.round(med*(rows.length-done)/60))} min verbleibend`:'Restzeit wird geschätzt …';
+    await new Promise(q=>setTimeout(q,0));
+   }
+
+   const mean=a=>a.length?a.reduce((s,v)=>s+v,0)/a.length:NaN,fmt2=x=>Number.isFinite(x)?x.toFixed(2):'—';
+   const B=mean(before),A=mean(after),cdB=mean(perBefore.chestDepth),cdA=mean(perAfter.chestDepth);
+   const femB=mean(sexChest.Frauen.b),femA=mean(sexChest.Frauen.a),maleB=mean(sexChest.Männer.b),maleA=mean(sexChest.Männer.a);
+
+   const protectedKeys=['chestBreadth','waistBreadth','waistDepth','hipBreadth','shoulder','torso','neckBase'];
+   const regress=protectedKeys.filter(k=>{
+    const b=mean(perBefore[k]),a=mean(perAfter[k]);
+    return Number.isFinite(a)&&Number.isFinite(b)&&a>b+.25;
+   });
+   const good=Number.isFinite(A)&&A<B-.10&&Number.isFinite(femA)&&femA<femB-1.0&&Number.isFinite(maleA)&&maleA<=1.4&&regress.length<=1;
+
+   const localFmt=o=>o?Object.entries(o).filter(([,v])=>Math.abs(v)>.01).map(([k,v])=>`${k} ${v>=0?'+':''}${fmt2(v)}`).join(' · '):'—';
+
+   this.panel.querySelector('#fit25Result').innerHTML=
+    `<div class="optimizerHero ${good?'hit':'miss'}"><small>V3.25 · ${after.length} PERSONEN · THORAX-MODELL n=${thoraxModel.n}</small><strong>${good?'BEREIT FÜR FINAL-HOLDOUT':'NOCH NICHT EINFRIEREN'}</strong><span>Gesamt-MAE ${fmt2(B)} → <b>${fmt2(A)} cm</b> · Brusttiefe ${fmt2(cdB)} → <b>${fmt2(cdA)} cm</b></span></div>
+     <div class="batchMeasureMatrix"><b>Brusttiefe getrennt</b><span>Frauen: ${fmt2(femB)} → <strong>${fmt2(femA)} cm</strong></span><span>Männer: ${fmt2(maleB)} → <strong>${fmt2(maleA)} cm</strong></span></div>
+     <div class="batchMeasureMatrix"><b>Gesamtfehler je Geschlecht</b><span>Frauen: ${fmt2(mean(femaleBefore))} → <strong>${fmt2(mean(femaleAfter))} cm</strong></span><span>Männer: ${fmt2(mean(maleBefore))} → <strong>${fmt2(mean(maleAfter))} cm</strong></span></div>
+     <div class="batchMeasureMatrix"><b>Einzelmaße · MAE vorher → V3.25</b>${TARGETS.map(([k,label])=>`<span>${label}: ${fmt2(mean(perBefore[k]))} → <strong>${fmt2(mean(perAfter[k]))} cm</strong></span>`).join('')}</div>
+     <div class="batchInfo"><b>Schutzprüfung</b><span>${regress.length?`Schlechter >0,25 cm: ${regress.join(', ')}`:'Alle geschützten Maße bleiben stabil.'}</span></div>
+     <div class="batchMeasureMatrix"><b>8 Frauen-Beispiele · lokale Projektion</b>${details.map((x,i)=>`<span>F${i+1}: ANSUR ${fmt2(x.raw)} · Solver gesamt ${fmt2(x.target)} · Thorax ${fmt2(x.thorax)} · Mesh ${fmt2(x.mesh)} · d8 ${fmt2(x.d8)} · BreastSize ${fmt2(x.size)} · ${localFmt(x.local)}</span>`).join('')}</div>
+     <div class="batchInfo"><b>Entscheidung</b><span>${good?'Als Nächstes nur noch Final-Holdout. Danach Solver + V3.25 einfrieren und Kalibrierung beenden.':'Kein neuer allgemeiner Trainingszyklus. Wir korrigieren nur noch den konkret ausgewiesenen Restengpass.'}</span></div>`;
+   this.panel.querySelector('#fit25Status').textContent=this.abort?'PAUSIERT':'ERLEDIGT';
+  }finally{
+   this.engine.restore(snap);this.ui.sync();this.engine.computeMetrics();
+  }
+ }
+
  async runV324Fit(){
   const rows=(this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,100);
   if(rows.length<50){alert('Nicht genug Validation-Personen geladen.');return}
