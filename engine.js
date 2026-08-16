@@ -201,6 +201,16 @@ export class BodyEngine{
   return {widthCm:(maxX-minX)*100,depthCm:(maxZ-minZ)*100,heightCm:(maxY-minY)*100};
  }
 
+
+ measurePathAxisLine(name,axis="x"){
+  const pts=this.measurePathPoints(name);
+  if(!pts.length)return [];
+  const ai=axis==="x"?"x":axis==="y"?"y":"z";
+  let lo=pts[0],hi=pts[0];
+  for(const p of pts){if(p[ai]<lo[ai])lo=p;if(p[ai]>hi[ai])hi=p}
+  return [lo.clone(),hi.clone()];
+ }
+
  measurePathPoints(name){
   const path=MEASURE_RULERS[name],a=this.body?.geometry?.attributes?.position?.array;
   if(!path||!a)return [];

@@ -235,3 +235,7 @@ Neuer visueller Messprotokoll-Review: 7 priorisierte Maße, direkte Mesh-Markier
 
 ## V3.8.1
 Mess-Revision is now a true bottom sheet (~43–44% viewport height). The 3D mannequin remains visible above it; measurement selection is a compact horizontal strip and only the review sheet scrolls.
+
+
+## V3.9 Full Measurement Protocol Review
+Expanded revision catalog to every measurement currently used by calibration/solver plus relevant existing MakeHuman ruler paths. Each entry explicitly separates reference meaning, ANSUR/protocol note, current Body Lab implementation, confidence/mapping status, and user revision. Derived and non-equivalent mappings are labeled rather than silently treated as exact.

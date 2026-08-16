@@ -280,3 +280,14 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
   #measureReviewPanel .mrHead p{display:none}
   #measureReviewPanel .mrAdjust{grid-template-columns:1fr 1fr}
 }
+
+/* V3.9 full measurement review */
+.mrFilters{display:flex;gap:6px;overflow-x:auto;padding:2px 0 7px;-webkit-overflow-scrolling:touch}
+.mrFilters button{flex:0 0 auto;padding:6px 9px;font-size:8px;border-radius:9px;background:#29292d}
+.mrFilters button.active{background:#eee;color:#111}
+.mrProtocol{margin-top:8px;padding:10px;border-radius:12px;background:#202024}
+.mrProtocol.bodylab{background:#24242a;border:1px solid rgba(255,255,255,.07)}
+.mrProtocol b{font-size:9px}
+.mrProtocol p{font-size:9px;line-height:1.4;color:#aaa;margin:5px 0 0}
+#measureReviewPanel .mrBody{height:calc(100% - 126px)}
+#measureReviewPanel .mrItem{min-width:118px}
