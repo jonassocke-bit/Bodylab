@@ -10,6 +10,14 @@ export class CalibrationLab{
   this.workflow=new FinalCalibrationWorkflowV320(engine,ui,null,batchLab,finalSolverV316);
   this.meshFit=new GuidedMeshFitV321(engine,ui,measurementLab,batchLab,this);
   this.button.disabled=false;
-  this.button.onclick=()=>{this.panel.classList.remove("hidden");this.workflow.sync()};
+  this.button.onclick=()=>{this.panel.classList.remove("hidden");this.workflow.sync();this.stampVersion()};
+  this.stampVersion();
+ stampVersion(){
+  const v=window.BODYLAB_VERSION||"unknown";
+  this.panel.querySelectorAll("[data-cal-version]").forEach(e=>e.textContent=`V${v}`);
+  for(const e of this.panel.querySelectorAll(".generatorSectionTitle")){
+   if(/MESH FIT/i.test(e.textContent))e.textContent=`MESH FIT · V${v}`;
+  }
+ }
  }
 }

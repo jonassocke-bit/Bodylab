@@ -1,3 +1,7 @@
+# BODY LAB v3.21.2
+
+> **Aktueller Build: v3.21.2** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
+
 BODY LAB V3.20.1
 
 Fix: Step 5 now performs the full real mesh reconstruction/measurement path for every untouched final-test person. It checkpoints after every person and invalidates the old instantaneous regression-only V3.20 result.
@@ -379,3 +383,24 @@ Legacy V3.7/V3.11/V3.12/V3.15 calibration experiments and sensitivity-lab UI are
 
 ## V3.21 — Guided Mesh Fit
 Five-step guided mesh-fit workflow after final calibration. Statistical solver remains frozen.
+
+
+## v3.21.2 — Version consistency + Morph-ID diagnosis fix
+
+- `version.js` is the single source of truth for the current build.
+- The same version is shown in the top-left app badge, browser/page title, Calibration/Mesh-Fit menu and GitHub README.
+- `VERSION` contains the machine-readable current version.
+- The previous diagnostic incorrectly searched semantic words inside compact modifier IDs such as `d24`.
+  V3.21.2 discovers torso morphs through `modifier-config.js` metadata (`group` / `target`) and then applies the corresponding compact ID to `directState`.
+- The diagnosis therefore must now find actual controls such as `torso-scale-depth`, `hip-scale-depth`, `stomach-navel`, etc., rather than returning an empty morph list.
+
+
+### Version-Anzeige-Check für v3.21.2
+Nach dem Upload auf GitHub müssen dieselben Werte sichtbar sein:
+- App oben links: `BODY LAB · v3.21.2`
+- Browser-/Seitentitel: `Harness Body Lab v3.21.2`
+- Calib-Menü: `V3.21.2`
+- Mesh-Fit/Diagnose: `V3.21.2`
+- GitHub README: `BODY LAB v3.21.2`
+- Datei `VERSION`: `3.21.2`
+- ZIP/Release-Dateiname: `BODYLAB_V3.21.2_...`

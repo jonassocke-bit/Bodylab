@@ -220,7 +220,7 @@ export class MeasureReviewLab{
  }
  toggle(force){const show=force===undefined?this.panel.classList.contains("hidden"):!!force;this.panel.classList.toggle("hidden",!show);this.group.visible=show;document.getElementById("measureReviewToggle").classList.toggle("active",show);if(show){this.renderList();this.renderCard();this.draw()}}
  export(){
-  const out={build:"BODY LAB v3.20.0",type:"full-measurement-protocol-review",exportedAt:new Date().toISOString(),
+  const out={build:"BODY LAB v3.21.2",type:"full-measurement-protocol-review",exportedAt:new Date().toISOString(),
    methodology:"Descriptions distinguish official/ANSUR target meaning from the current Body Lab mapping. Derived/internal measures are marked explicitly.",
    reviews:MEASURES.map(m=>({id:m.id,title:m.title,reference:m.ansur,group:m.group,confidence:m.confidence,referenceDescription:m.simple,protocol:m.protocol,bodyLabMapping:m.bodylab,...(this.data[m.id]||{})}))};
   const blob=new Blob([JSON.stringify(out,null,2)],{type:"application/json"}),u=URL.createObjectURL(blob),a=document.createElement("a");a.href=u;a.download="BODYLAB_FULL_MEASURE_REVIEW_v3.20.0.json";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000)

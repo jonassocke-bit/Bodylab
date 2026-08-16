@@ -13,6 +13,10 @@ import {SolverV316} from "./solver-v316.js";
 import {MeasureReviewLab} from "./measure-review.js";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
+const APP_VERSION=window.BODYLAB_VERSION||"unknown";
+document.title=`Harness Body Lab v${APP_VERSION}`;
+document.querySelectorAll("[data-version-label]").forEach(el=>el.textContent=`BODY LAB · v${APP_VERSION}`);
+
 function progress(a,b){title.textContent=a;detail.textContent=b||""}
 
 async function boot(){
@@ -47,7 +51,7 @@ async function boot(){
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
  setTimeout(()=>card.classList.add("hidden"),500);
 
- window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,frozenSolverV311,finalSolverV316,finalValidationV315,measureReviewLab};
+ window.BodyLab={version:APP_VERSION,engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,frozenSolverV311,finalSolverV316,finalValidationV315,measureReviewLab};
 }
 boot().catch(err=>{
  console.error(err);

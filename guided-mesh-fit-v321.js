@@ -10,7 +10,7 @@ export class GuidedMeshFitV321{
  save(){localStorage.setItem(STORE,JSON.stringify(this.state))}
  rows(){return (this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,5)}
  inject(){const h=document.createElement('div');h.id='meshFitV321';h.innerHTML=`
- <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.21.1</div>
+ <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.21.2</div>
  <div class="generatorIntro"><b>Kein weiterer Kalibrierungslauf.</b> Dieser Test prüft an nur 5 Personen die technische Kette: Morphwert → Meshänderung → Messwertänderung → Umfangs-Verriegelung. Erst wenn diese Kette nachweislich funktioniert, wird der 100-Personen-Fit wieder freigeschaltet.</div>
  <section class="fcStep"><div class="fcStepHead"><span>1</span><div><b>5 Personen diagnostizieren</b><small>ca. 1–3 Minuten · verändert kein gespeichertes Modell</small></div><strong id="mdStatus">BEREIT</strong></div>
  <div class="generatorActions"><button id="mdRun" class="primary">Diagnose starten</button><button id="mdAbort">Abbrechen</button></div>
@@ -24,12 +24,21 @@ export class GuidedMeshFitV321{
  meshSample(){const a=this.engine.body?.geometry?.attributes?.position?.array;if(!a)return [];const out=[];const step=Math.max(3,Math.floor(a.length/180));for(let i=0;i<a.length;i+=step)out.push(a[i]);return out}
  meshDelta(a,b){let s=0,m=0,n=Math.min(a.length,b.length);for(let i=0;i<n;i++){const d=Math.abs((b[i]||0)-(a[i]||0));s+=d;if(d>m)m=d}return {sum:s,max:m}}
  measureDelta(a,b){let max=0,key='';for(const [k] of TARGETS){const d=Math.abs((b[k]??NaN)-(a[k]??NaN));if(Number.isFinite(d)&&d>max){max=d;key=k}}return {max,key}}
- morphs(){return Object.keys(this.engine.directState||{}).filter(id=>/(stomach|waist|torso|breast|chest|hip|pelvis|butt)/i.test(id)&&!/(face|eye|nose|mouth|ear)/i.test(id)).slice(0,24)}
+ morphs(){
+  const out=[],seen=new Set(),wanted=/(stomach|waist|torso|breast|chest|hip|pelvis|butt)/i,blocked=/(face|eye|nose|mouth|ear)/i;
+  for(const group of this.engine.groups||[])for(const c of group.controls||[]){
+   if(!c?.id||seen.has(c.id)||!(c.id in (this.engine.directState||{})))continue;
+   const semantic=`${group.id||""} ${c.group||""} ${c.target||""}`;
+   if(!wanted.test(semantic)||blocked.test(semantic))continue;
+   seen.add(c.id);out.push({id:c.id,target:c.target||c.id,group:c.group||group.id||""});
+  }
+  return out.slice(0,24);
+ }
  async baseline(r){const e=this.engine,l=this.lab;e.reset();e.state.gender=r.gender===0?0:r.gender===1?1:.5;e.state.age=Math.max(0,Math.min(1,l.ageToSlider(r.age||30)));e.state.muscle=Math.max(0,Math.min(1,r.build??.52));e.updateBody({normals:false,metrics:false});await l.solveCore('height',r.height,'height',0,1);await l.solveCore('weight',r.weight,'weight',0,1);e.updateBody({normals:false,metrics:false});await this.relock(r);e.updateBody({normals:false,metrics:false})}
  async relock(r){await this.lab.solveDirect('measure-bust-circ',r.chest);await this.lab.solveDirect('measure-waist-circ',r.waist);await this.lab.solveDirect('measure-hips-circ',r.hip)}
  async diagnosePerson(r,index){await this.baseline(r);const baseM=this.current(),baseMesh=this.meshSample(),morphs=this.morphs();let chosen=null;
-  for(const id of morphs){const old=Number(this.engine.directState[id]||0),test=Math.max(-1.2,Math.min(1.2,old+.10));this.engine.directState[id]=test;this.engine.updateBody({normals:false,metrics:false});const m=this.current(),mesh=this.meshSample(),md=this.meshDelta(baseMesh,mesh),xd=this.measureDelta(baseM,m);this.engine.directState[id]=old;this.engine.updateBody({normals:false,metrics:false});if(!chosen||xd.max>chosen.measureDelta)chosen={id,old,test,meshDelta:md.max,measureDelta:xd.max,measureKey:xd.key,afterMorph:m};if(xd.max>.02&&md.max>1e-7)break}
-  if(!chosen)return {index,problem:'Keine passenden Rumpf-Morphs gefunden'};
+  for(const morph of morphs){const id=morph.id;const old=Number(this.engine.directState[id]||0),test=Math.max(-1.2,Math.min(1.2,old+.10));this.engine.directState[id]=test;this.engine.updateBody({normals:false,metrics:false});const m=this.current(),mesh=this.meshSample(),md=this.meshDelta(baseMesh,mesh),xd=this.measureDelta(baseM,m);this.engine.directState[id]=old;this.engine.updateBody({normals:false,metrics:false});if(!chosen||xd.max>chosen.measureDelta)chosen={id,target:morph.target,group:morph.group,old,test,meshDelta:md.max,measureDelta:xd.max,measureKey:xd.key,afterMorph:m};if(xd.max>.02&&md.max>1e-7)break}
+  if(!chosen)return {index,problem:`Keine passenden Rumpf-Morphs gefunden · groups=${(this.engine.groups||[]).length} · directState=${Object.keys(this.engine.directState||{}).length}`};
   const id=chosen.id,old=Number(this.engine.directState[id]||0);this.engine.directState[id]=chosen.test;this.engine.updateBody({normals:false,metrics:false});const preRelockM=this.current(),preRelockMesh=this.meshSample();const stateBefore=clone(this.engine.directState);await this.relock(r);const stateAfterSolve=clone(this.engine.directState);const meshImmediately=this.meshSample(),immediateM=this.current();this.engine.updateBody({normals:false,metrics:false});const meshAfterUpdate=this.meshSample(),afterUpdateM=this.current();
   const relockStateChanged=Object.keys(stateAfterSolve).some(k=>Math.abs((stateAfterSolve[k]||0)-(stateBefore[k]||0))>1e-6);const stale=this.meshDelta(meshImmediately,meshAfterUpdate).max>1e-7||this.measureDelta(immediateM,afterUpdateM).max>.005;
   return {index,morph:id,morphFrom:old,morphTo:chosen.test,morphMeshDelta:chosen.meshDelta,morphMeasureDelta:chosen.measureDelta,morphMeasureKey:chosen.measureKey,relockStateChanged,staleAfterRelock:stale,immediateVsUpdatedMesh:this.meshDelta(meshImmediately,meshAfterUpdate).max,immediateVsUpdatedMeasure:this.measureDelta(immediateM,afterUpdateM).max,preRelock:preRelockM,immediate:immediateM,updated:afterUpdateM}}
