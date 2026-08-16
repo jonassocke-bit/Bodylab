@@ -1,3 +1,4 @@
+import {ValidationCheckpointV316} from "./validation-checkpoint-v316.js";
 
 function mean(a){return a.length?a.reduce((s,x)=>s+x,0)/a.length:NaN}
 function pctl(a,p){if(!a.length)return NaN;const x=[...a].sort((a,b)=>a-b),i=(x.length-1)*p,l=Math.floor(i),h=Math.ceil(i);return x[l]+(x[h]-x[l])*(i-l)}
@@ -9,12 +10,12 @@ function isHoldout(r){
 }
 export class FinalValidationV315{
  constructor(engine,ui,lab,batch,solver,finalSolver){
-  this.engine=engine;this.ui=ui;this.lab=lab;this.batch=batch;this.solver=solver;this.finalSolver=finalSolver;this.abort=false;
+  this.engine=engine;this.ui=ui;this.lab=lab;this.batch=batch;this.solver=solver;this.finalSolver=finalSolver;this.abort=false;this.cp=new ValidationCheckpointV316();this.resumeData=null;
   this.panel=document.getElementById("calibrationPanel");this.inject();
  }
  inject(){
   const wrap=document.createElement("div");
-  wrap.innerHTML=`<div class="generatorSectionTitle">E · FINAL VALIDATION · V3.15</div>
+  wrap.innerHTML=`<div class="generatorSectionTitle">E · FINAL VALIDATION · V3.16</div>
   <div class="generatorIntro compact">
    Abschlussprüfung des <b>eingefrorenen V3.11-Solvers</b>. Verwendet werden ausschließlich Personen aus seinem
    deterministischen 20%-Holdout; an diesen Personen wurde das Hidden-Geometry-Modell nicht trainiert.
@@ -22,7 +23,13 @@ export class FinalValidationV315{
   <div class="generatorGrid"><label>Max. Holdout-Personen
    <select id="finalN"><option value="250">250</option><option value="500">500</option><option value="1000">1.000</option><option value="999999" selected>Alle verfügbaren</option></select>
   </label></div>
-  <div class="generatorActions"><button id="finalRun" class="primary">Final Validation starten</button><button id="finalAbort">Abbrechen</button></div>
+  <div class="generatorActions">
+   <button id="finalRun" class="primary">Final Validation starten</button>
+   <button id="finalResume" disabled>Fortsetzen</button>
+   <button id="finalAbort">Pausieren</button>
+   <button id="finalClearCheckpoint">Checkpoint löschen</button>
+  </div>
+  <div id="finalCheckpointInfo" class="batchInfo"><b>Checkpoint</b><span>Kein fortsetzbarer Lauf.</span></div>
   <div id="finalProgress" class="batchProgressRich hidden">
    <div class="batchProgressTop"><b id="finalTitle">Warte …</b><span id="finalPct">0%</span></div>
    <div class="batchProgressTrack"><div id="finalBar"></div></div>
@@ -30,8 +37,29 @@ export class FinalValidationV315{
   </div>
   <div id="finalResults" class="calResults"></div>`;
   this.panel.appendChild(wrap);
-  this.panel.querySelector("#finalRun").onclick=()=>this.run();
+  this.panel.querySelector("#finalRun").onclick=()=>this.run(false);
+  this.panel.querySelector("#finalResume").onclick=()=>this.run(true);
   this.panel.querySelector("#finalAbort").onclick=()=>{this.abort=true};
+  this.panel.querySelector("#finalClearCheckpoint").onclick=async()=>{await this.cp.clear();this.resumeData=null;this.renderCheckpointInfo()};
+  this.loadCheckpointInfo();
+  document.addEventListener("visibilitychange",()=>{if(document.hidden)this.flushCheckpoint?.()});
+ }
+ async loadCheckpointInfo(){
+  try{this.resumeData=await this.cp.load();this.renderCheckpointInfo()}catch(e){console.warn("Checkpoint read failed",e)}
+ }
+ renderCheckpointInfo(){
+  const box=this.panel.querySelector("#finalCheckpointInfo"),btn=this.panel.querySelector("#finalResume"),x=this.resumeData;
+  if(!box||!btn)return;
+  const usable=x?.version==="v3.16"&&x?.done>0&&x?.done<x?.total;
+  btn.disabled=!usable;
+  box.innerHTML=usable?`<b>Fortsetzbar: ${x.done}/${x.total}</b><span>${x.batchId||"gespeicherter Datensatz"} · nach jeder Person gesichert</span>`:"<b>Checkpoint</b><span>Kein fortsetzbarer Lauf.</span>";
+ }
+ async saveCheckpoint(payload){
+  this.resumeData={version:"v3.16",savedAt:new Date().toISOString(),...payload};
+  await this.cp.save(this.resumeData);this.renderCheckpointInfo();
+ }
+ async flushCheckpoint(){
+  if(this._checkpointPayload)try{await this.saveCheckpoint(this._checkpointPayload)}catch(e){}
  }
  time(sec){if(!Number.isFinite(sec))return "wird geschätzt …";sec=Math.round(sec);if(sec<60)return `${sec} s`;const m=Math.floor(sec/60),s=sec%60;if(m<60)return `${m}:${String(s).padStart(2,"0")} min`;return `${Math.floor(m/60)} h ${m%60} min`}
  progress(done,total,start,samples){
@@ -64,7 +92,7 @@ export class FinalValidationV315{
   return true;
  }
 
- async run(){
+ async run(resume=false){
   if(!this.solver?.trained()){
    const title=this.panel.querySelector("#finalTitle");
    const prog=this.panel.querySelector("#finalProgress");
@@ -78,15 +106,25 @@ export class FinalValidationV315{
   const candidates=(this.batch?.rows||[]).filter(r=>isHoldout(r)&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite));
   if(!candidates.length){alert("Keine V3.11-Holdout-Personen im gespeicherten Datensatz gefunden.");return}
   const cap=Number(this.panel.querySelector("#finalN").value)||candidates.length,rows=candidates.slice(0,Math.min(cap,candidates.length));
-  const before=this.engine.snapshot(),start=performance.now(),samples=[],base=[],v311=[],final=[],female={b:[],v:[],f:[]},male={b:[],v:[],f:[]},per={};
+  const before=this.engine.snapshot(),start=performance.now(),samples=[];
+  const batchId=this.batch?.persistence?.meta?.id||`rows-${this.batch?.rows?.length||0}`;
+  let startIndex=0,base=[],v311=[],final=[],female={b:[],v:[],f:[]},male={b:[],v:[],f:[]},per={};
+  if(resume){
+   const cp=await this.cp.load();
+   if(!cp||cp.version!=="v3.16"||cp.batchId!==batchId||cp.total!==rows.length){alert("Der Checkpoint passt nicht zu diesem Datensatz bzw. dieser Testgröße.");return}
+   startIndex=cp.done||0;base=cp.base||[];v311=cp.v311||[];final=cp.final||[];female=cp.female||female;male=cp.male||male;per=cp.per||{};
+  }else{await this.cp.clear();this.resumeData=null;this.renderCheckpointInfo()}
   const prog=this.panel.querySelector("#finalProgress"),box=this.panel.querySelector("#finalResults");prog.classList.remove("hidden");this.abort=false;
   try{
-   for(let i=0;i<rows.length;i++){
+   for(let i=startIndex;i<rows.length;i++){
     if(this.abort)break;const t0=performance.now(),r=rows[i];this.progress(i,rows.length,start,samples);
     await this.solver.baseline(r);const a=this.solver.scoreHarness(r);if(Number.isFinite(a.mae))base.push(a.mae);
     await this.solver.correct(r);const z=this.solver.scoreHarness(r);if(Number.isFinite(z.mae))v311.push(z.mae);
 
-    await this.finalSolver.baseline(r);await this.finalSolver.finalCorrect(r);
+    // Exact quality-preserving optimization:
+    // We are already on the frozen V3.11 state. Do not recompute identical Baseline→V3.11.
+    // Only run the additional coupled cross-section stage.
+    await this.finalSolver.optimizeCrossSections(r);
     const q=this.finalSolver.scoreHarness(r);if(Number.isFinite(q.mae))final.push(q.mae);
 
     const sx=r.gender===0?female:male;
@@ -99,9 +137,16 @@ export class FinalValidationV315{
      if(Number.isFinite(q.per?.[k]))per[k].f.push(Math.abs(q.per[k]));
     }
     const sec=(performance.now()-t0)/1000;if(sec>.001&&sec<300)samples.push(sec);if(samples.length>30)samples.shift();
+    this._checkpointPayload={batchId,total:rows.length,done:i+1,base,v311,final,female,male,per};
+    await this.saveCheckpoint(this._checkpointPayload);
     this.progress(i+1,rows.length,start,samples);await new Promise(q=>setTimeout(q,0));
    }
-   if(this.abort){this.panel.querySelector("#finalTitle").textContent="Final Validation abgebrochen";return}
+   if(this.abort){
+    await this.flushCheckpoint();
+    this.panel.querySelector("#finalTitle").textContent="Final Validation pausiert";
+    this.panel.querySelector("#finalEta").textContent="Fortsetzen ist gespeichert";
+    return;
+   }
    const mb=mean(base),mv=mean(v311),mf=mean(final),gain=mb-mf,rel=100*gain/mb;
    const pb=pctl(base,.9),pv=pctl(v311,.9),pf=pctl(final,.9);
    const fg=mean(female.b)-mean(female.f),mg=mean(male.b)-mean(male.f);
@@ -111,18 +156,19 @@ export class FinalValidationV315{
    const pass=gain>.10&&fg>0&&mg>0&&waistPass&&!protectedRegression;
 
    box.innerHTML=`<div class="optimizerHero ${pass?"hit":"miss"}"><small>FINAL HOLDOUT · ${base.length} PERSONEN</small><strong>${fmt(mf)} cm</strong>
-   <span>Baseline ${fmt(mb)} · V3.11 ${fmt(mv)} · V3.15 ${fmt(mf)} cm</span>
-   <b>V3.15 vs. Baseline: ${gain>=0?"−":"+"}${fmt(Math.abs(gain))} cm · ${Math.abs(rel).toFixed(1)}%</b></div>
+   <span>Baseline ${fmt(mb)} · V3.11 ${fmt(mv)} · V3.16 ${fmt(mf)} cm</span>
+   <b>V3.16 vs. Baseline: ${gain>=0?"−":"+"}${fmt(Math.abs(gain))} cm · ${Math.abs(rel).toFixed(1)}%</b></div>
    <div class="batchMeasureMatrix"><b>Robustheit</b>
     <span>P90: ${fmt(pb)} → ${fmt(pv)} → <strong>${fmt(pf)} cm</strong></span>
     <span>Frauen: ${fmt(mean(female.b))} → ${fmt(mean(female.v))} → <strong>${fmt(mean(female.f))} cm</strong></span>
     <span>Männer: ${fmt(mean(male.b))} → ${fmt(mean(male.v))} → <strong>${fmt(mean(male.f))} cm</strong></span>
    </div>
-   <div class="batchMeasureMatrix"><b>Harness-Maße · Baseline → V3.11 → V3.15</b>
+   <div class="batchMeasureMatrix"><b>Harness-Maße · Baseline → V3.11 → V3.16</b>
     ${Object.entries(per).map(([k,v])=>`<span>${k}: ${fmt(mean(v.b))} → ${fmt(mean(v.v))} → <strong>${fmt(mean(v.f))} cm</strong></span>`).join("")}
    </div>
    <div class="optimizerHero ${pass?"hit":"miss"}"><small>ABSCHLUSSENTSCHEIDUNG</small><strong>${pass?"BESTANDEN ✓":"NICHT BESTANDEN"}</strong>
-    <span>${pass?"Kalibrierungsphase beendet: V3.15 kann als Produktionsbasis übernommen werden.":"Kein weiterer Solver-Zyklus vorgesehen; Ergebnis als Produktentscheidung bewerten."}</span></div>`;
+    <span>${pass?"Kalibrierungsphase beendet: V3.16 kann als Produktionsbasis übernommen werden.":"Kein weiterer Solver-Zyklus vorgesehen; Ergebnis als Produktentscheidung bewerten."}</span></div>`;
+   await this.cp.clear();this.resumeData=null;this.renderCheckpointInfo();this._checkpointPayload=null;
    this.panel.querySelector("#finalTitle").textContent="Final Validation abgeschlossen";
    this.panel.querySelector("#finalEta").textContent=`Fertig in ${this.time((performance.now()-start)/1000)}`;
   }finally{this.engine.restore(before);this.ui.sync();this.engine.computeMetrics()}

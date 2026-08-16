@@ -333,3 +333,13 @@ Final Validation remains the same frozen holdout and compares Baseline → V3.11
 
 ## V3.15.1 Hotfix
 Fixes a boot-time variable-name mismatch in `main.js`: the FinalValidationV315 instance was created as `finalValidationV314` but exported as `finalValidationV315`, causing a ReferenceError during boot. Solver logic is unchanged.
+
+
+## V3.16 — Resumable maximum-quality validation
+No solver-quality shortcuts were introduced. V3.15 redundantly calculated Baseline→V3.11 twice per person:
+once for the reported V3.11 result and again inside the V3.15 candidate before cross-section optimization.
+V3.16 reuses the already computed exact V3.11 state and runs only the additional coupled cross-section stage.
+Candidate count, step schedule, real mesh evaluation, circumference re-locks, trust weights and safety guards are unchanged.
+
+Final Validation saves a checkpoint after every completed person in IndexedDB and can resume from the next
+person after iOS suspension, app switching or reload.

@@ -299,3 +299,5 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
 .batchProgressTop{font-size:10px}.batchProgressMeta{font-size:8px;color:#999;margin-top:7px}
 .batchProgressTrack{height:8px;border-radius:8px;background:#151518;overflow:hidden;margin-top:9px;border:1px solid rgba(255,255,255,.06)}
 .batchProgressTrack>div{height:100%;width:0%;border-radius:8px;background:#eee;transition:width .15s linear}
+
+#finalCheckpointInfo{margin:8px 0 10px}#finalCheckpointInfo b{color:#b9e8c0}
