@@ -428,7 +428,5 @@ Cause: the `CalibrationLab` constructor was not closed before the `stampVersion(
 A single missing `}` has been restored. The diagnostic error reporting and the metadata-based morph lookup remain intact.
 
 
-## v3.21.7 — calibration.js parser hotfix
-Safari reported `calibration.js` line 24 parser error.
-Cause: one extra closing brace remained at the end of the class.
-This build removes only that brace and bumps cache references to v3.21.7.
+## v3.21.7
+5-Personen-Diagnose für Zielfunktion und Morph-Auswahl. Kein großer Batch.
