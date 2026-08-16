@@ -339,7 +339,7 @@ export class MeasurementLab{
   if(v.underbust)rows.push({key:"underbust",label:"Unterbrustumfang",target:v.underbust,actual:o.underbust,used:v.useUnderbust,unit:"cm"});
   if(v.shoulder)rows.push({key:"shoulder",label:"Schulterbreite",target:v.shoulder,actual:o.shoulder,used:v.useShoulder,unit:"cm",landmark:true});
   this.lastReport={
-   build:"BODY LAB v3.21.2",
+   build:"BODY LAB v3.20.0",
    createdAt:new Date().toISOString(),
    inputs:v,rows,
    state:this.engine.snapshot(),
