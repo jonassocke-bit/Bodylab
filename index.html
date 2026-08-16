@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#101011">
-<meta name="bodylab-version" content="3.21.3">
+<meta name="bodylab-version" content="3.21.4">
 <title>Harness Body Lab</title>
 <link rel="stylesheet" href="./style.css">
 <script type="importmap">
@@ -14,18 +14,34 @@
 }}
 </script>
 <script>
-window.addEventListener("error",function(e){
-  var box=document.getElementById("bootError");
-  if(!box)return;
-  box.classList.remove("hidden");
-  box.textContent="Startfehler: "+(e && e.message ? e.message : "JavaScript-Fehler");
-});
-window.addEventListener("unhandledrejection",function(e){
-  var box=document.getElementById("bootError"),r=e&&e.reason;
-  if(!box)return;
-  box.classList.remove("hidden");
-  box.textContent="Ladefehler: "+String(r && (r.message||r) || "unbekannt");
-});
+(function(){
+  function show(msg){
+    var box=document.getElementById("bootError");
+    if(!box)return;
+    box.classList.remove("hidden");
+    box.style.whiteSpace="pre-wrap";
+    box.textContent=msg;
+  }
+  window.addEventListener("error",function(e){
+    var parts=[
+      "STARTFEHLER",
+      String(e && e.message || "JavaScript-Fehler"),
+      e && e.filename ? "Datei: "+e.filename : "",
+      e && e.lineno ? "Zeile: "+e.lineno+" · Spalte: "+(e.colno||0) : "",
+      e && e.error && e.error.stack ? "\n"+e.error.stack : ""
+    ].filter(Boolean);
+    show(parts.join("\n"));
+  });
+  window.addEventListener("unhandledrejection",function(e){
+    var r=e&&e.reason;
+    var parts=[
+      "LADEFEHLER",
+      String(r && (r.message||r) || "unbekannt"),
+      r && r.stack ? "\n"+r.stack : ""
+    ].filter(Boolean);
+    show(parts.join("\n"));
+  });
+})();
 </script>
 </head>
 <body>
@@ -109,6 +125,6 @@ window.addEventListener("unhandledrejection",function(e){
 <section id="calibrationPanel" class="overlay generatorOverlay hidden"></section>
 <section id="measureReviewPanel" class="overlay generatorOverlay hidden"></section>
 <section id="debugPanel" class="overlay hidden"></section>
-<script type="module" src="./main.js"></script>
+<script type="module" src="./main.js?v=3.21.4"></script>
 </body>
 </html>

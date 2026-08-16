@@ -1,16 +1,17 @@
+import {probeBootModules} from "./boot-probe.js?v=3.21.4";
 
-import {BodyEngine} from "./engine.js";
-import {BodyUI} from "./ui.js";
-import {setupDebug} from "./debug.js";
-import {MeasurementLab} from "./generator.js";
-import {BatchLab} from "./batch.js";
-import {CalibrationLab} from "./calibration.js";
-import {CalibratedSolverV37} from "./solver-v37.js";
-import {SolverV312} from "./solver-v312.js";
-import {FrozenSolverV311} from "./solver-v311-frozen.js";
-import {FinalValidationV315} from "./final-validation.js";
-import {SolverV316} from "./solver-v316.js";
-import {MeasureReviewLab} from "./measure-review.js";
+import {BodyEngine} from "./engine.js?v=3.21.4";
+import {BodyUI} from "./ui.js?v=3.21.4";
+import {setupDebug} from "./debug.js?v=3.21.4";
+import {MeasurementLab} from "./generator.js?v=3.21.4";
+import {BatchLab} from "./batch.js?v=3.21.4";
+import {CalibrationLab} from "./calibration.js?v=3.21.4";
+import {CalibratedSolverV37} from "./solver-v37.js?v=3.21.4";
+import {SolverV312} from "./solver-v312.js?v=3.21.4";
+import {FrozenSolverV311} from "./solver-v311-frozen.js?v=3.21.4";
+import {FinalValidationV315} from "./final-validation.js?v=3.21.4";
+import {SolverV316} from "./solver-v316.js?v=3.21.4";
+import {MeasureReviewLab} from "./measure-review.js?v=3.21.4";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
 const APP_VERSION=document.querySelector('meta[name="bodylab-version"]')?.content||"unknown";
@@ -21,6 +22,7 @@ document.querySelectorAll("[data-version-label]").forEach(el=>el.textContent=`BO
 function progress(a,b){title.textContent=a;detail.textContent=b||""}
 
 async function boot(){
+ await probeBootModules();
  const engine=new BodyEngine(document.getElementById("viewport"),progress);
  const ui=new BodyUI(engine);
  setupDebug();
@@ -58,6 +60,8 @@ boot().catch(err=>{
  console.error(err);
  title.textContent="Ladefehler";
  detail.textContent=String(err&&err.message||err);
- document.getElementById("bootError").classList.remove("hidden");
- document.getElementById("bootError").textContent=String(err&&err.stack||err);
+ const box=document.getElementById("bootError");
+ box.classList.remove("hidden");
+ box.style.whiteSpace="pre-wrap";
+ box.textContent="BOOT CATCH\n"+String(err&&err.stack||err);
 });

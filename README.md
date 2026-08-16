@@ -1,4 +1,4 @@
-# BODY LAB v3.21.3
+# BODY LAB v3.21.4
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -410,3 +410,10 @@ Nach dem Upload auf GitHub müssen dieselben Werte sichtbar sein:
 - Versionsquelle ohne zusätzliche JavaScript-Datei direkt in `index.html`.
 - Morph-Metadaten-Fix aus v3.21.2 bleibt enthalten.
 - Alle JavaScript-Dateien wurden vor Ausgabe syntaktisch geprüft.
+
+
+## v3.21.4 — Exact Boot Diagnostic
+- All JS/module URLs are cache-busted with `?v=3.21.4` to prevent Safari/GitHub Pages from mixing old modules with the new build.
+- Boot errors now show exact filename, line and column where available.
+- A pre-boot module probe explicitly loads the dynamic assets (`body-morphs.js`, `face-morphs.js`, config, macro meta, rig data) before the app starts.
+- If one of those assets is stale or syntactically invalid, the red error card names that asset directly.
