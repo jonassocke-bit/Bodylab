@@ -10,15 +10,20 @@ export class GuidedMeshFitV321{
  save(){localStorage.setItem(STORE,JSON.stringify(this.state))}
  rows(){return (this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,5)}
  inject(){const h=document.createElement('div');h.id='meshFitV321';h.innerHTML=`
- <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.21.8</div>
+ <div class="generatorSectionTitle">MESH-FIT DIAGNOSE · V3.21.9</div>
  <div class="generatorIntro"><b>Kein weiterer Kalibrierungslauf.</b> Dieser Test prüft an nur 5 Personen die technische Kette: Morphwert → Meshänderung → Messwertänderung → Umfangs-Verriegelung. Erst wenn diese Kette nachweislich funktioniert, wird der 100-Personen-Fit wieder freigeschaltet.</div>
  <section class="fcStep"><div class="fcStepHead"><span>1</span><div><b>5 Personen diagnostizieren</b><small>ca. 1–3 Minuten · verändert kein gespeichertes Modell</small></div><strong id="mdStatus">BEREIT</strong></div>
  <div class="generatorActions"><button id="mdRun" class="primary">Diagnose starten</button><button id="mdAbort">Abbrechen</button></div>
  <div id="mdProgress" class="batchProgressRich hidden"><div class="batchProgressTop"><b id="mdTitle">Technische Diagnose</b><span id="mdPct">0%</span></div><div class="batchProgressTrack"><div id="mdBar"></div></div><div class="batchProgressMeta"><span id="mdCount">0 / 5</span><span>nur Diagnose</span></div></div>
  <div id="mdSummary" class="calResults"></div></section>
  <section class="fcStep"><div class="fcStepHead"><span>2</span><div><b>Technisches Protokoll</b><small>zeigt exakt, wo Änderungen verloren gehen</small></div><strong>DETAILS</strong></div><div id="mdDetails" class="calResults"></div></section>
- <section class="fcStep"><div class="fcStepHead"><span>3</span><div><b>Zielfunktion & Morph-Auswahl</b><small>5 Personen · kein großer Batch</small></div><strong id="mdNext">BEREIT</strong></div><div id="mdNextText" class="batchInfo">Nach erfolgreicher Technik-Diagnose hier die Auswahlentscheidung des Optimierers prüfen.</div><div class="generatorActions"><button id="objRun" class="primary">Auswahltest starten</button><button id="objAbort">Abbrechen</button></div><div id="objProgress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>Objective Diagnose</b><span id="objPct">0%</span></div><div class="batchProgressTrack"><div id="objBar"></div></div><div class="batchProgressMeta"><span id="objCount">0 / 5</span><span>kein großer Batch</span></div></div><div id="objResult" class="calResults"></div></section>`;this.panel.appendChild(h)}
- bind(){this.panel.querySelector('#mdRun').onclick=()=>this.run();this.panel.querySelector('#mdAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#objRun').onclick=()=>this.runObjective();this.panel.querySelector('#objAbort').onclick=()=>{this.abort=true}}
+ <section class="fcStep"><div class="fcStepHead"><span>3</span><div><b>Zielfunktion & Morph-Auswahl</b><small>5 Personen · kein großer Batch</small></div><strong id="mdNext">BEREIT</strong></div><div id="mdNextText" class="batchInfo">Nach erfolgreicher Technik-Diagnose hier die Auswahlentscheidung des Optimierers prüfen.</div><div class="generatorActions"><button id="objRun" class="primary">Auswahltest starten</button><button id="objAbort">Abbrechen</button></div><div id="objProgress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>Objective Diagnose</b><span id="objPct">0%</span></div><div class="batchProgressTrack"><div id="objBar"></div></div><div class="batchProgressMeta"><span id="objCount">0 / 5</span><span>kein großer Batch</span></div></div><div id="objResult" class="calResults"></div></section>
+ <section class="fcStep"><div class="fcStepHead"><span>4</span><div><b>100-Personen Ziel-Audit</b><small>ANSUR ↔ Solver-Ziel ↔ echtes Mesh</small></div><strong id="auditStatus">BEREIT</strong></div>
+ <div class="generatorIntro"><b>Entscheidungstest.</b> Kein Training und kein Morph-Tuning. Für 100 Validation-Personen vergleichen wir die echten ANSUR-Maße mit dem eingefrorenen statistischen Ziel und dem tatsächlich erzeugten Baseline-Mesh.</div>
+ <div class="generatorActions"><button id="auditRun" class="primary">100 Personen analysieren</button><button id="auditAbort">Abbrechen</button></div>
+ <div id="auditProgress" class="batchProgressRich hidden"><div class="batchProgressTop"><b>Ziel-Audit</b><span id="auditPct">0%</span></div><div class="batchProgressTrack"><div id="auditBar"></div></div><div class="batchProgressMeta"><span id="auditCount">0 / 100</span><span id="auditEta">Restzeit wird geschätzt …</span></div></div>
+ <div id="auditResult" class="calResults"></div></section>`;this.panel.appendChild(h)}
+ bind(){this.panel.querySelector('#mdRun').onclick=()=>this.run();this.panel.querySelector('#mdAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#objRun').onclick=()=>this.runObjective();this.panel.querySelector('#objAbort').onclick=()=>{this.abort=true};this.panel.querySelector('#auditRun').onclick=()=>this.runTargetAudit();this.panel.querySelector('#auditAbort').onclick=()=>{this.abort=true}}
  sync(){if(this.state.result)this.render(this.state.result)}
  current(){const h=this.engine.harnessBlindMetrics();return {shoulder:this.engine.shoulderBreadthCm(),torso:this.engine.shoulderToCrotchCm(),chestBreadth:h.chestBreadth,chestDepth:h.chestDepth,waistBreadth:h.waistBreadth,waistDepth:h.waistDepth,hipBreadth:h.hipBreadth,neckBase:h.neckBase}}
  meshSample(){const a=this.engine.body?.geometry?.attributes?.position?.array;if(!a)return [];const out=[];const step=Math.max(3,Math.floor(a.length/180));for(let i=0;i<a.length;i+=step)out.push(a[i]);return out}
@@ -72,6 +77,76 @@ export class GuidedMeshFitV321{
   this.panel.querySelector('#objResult').innerHTML=`<div class="optimizerHero ${ok?'hit':'miss'}"><small>OBJECTIVE / MORPH-AUSWAHL</small><strong>${ok?'AUSWAHLLOGIK OK':'AUFFÄLLIGKEIT GEFUNDEN'}</strong><span>${improved}/${results.length} verbessern die Zielfunktion · ${wrong}/${results.length} bewegen das größte Fehlermaß in die falsche Richtung</span></div>`+results.map((r,i)=>{const b=r.choices[0],tops=r.choices.slice(0,3).map(x=>`${x.id} (${x.target||'?'}) ${x.dir>0?'+':'−'} · ${x.obj.toFixed(5)}`).join('<br>');return `<div class="batchInfo"><b>Person ${i+1}</b><span>Größter Fehler: ${r.worst?`${r.worst.key} ${r.worst.err>=0?'+':''}${r.worst.err.toFixed(2)} cm`:'—'}</span><span>Objective: ${r.before.toFixed(5)} → ${b?b.obj.toFixed(5):'—'}</span><span>Beste Wahl: ${b?`${b.id} · ${b.target||'?'} · ${b.dir>0?'+':'−'}`:'—'}</span><span>Wirkung auf größtes Fehlermaß: ${b&&Number.isFinite(b.delta)?`${b.delta>=0?'+':''}${b.delta.toFixed(3)} cm`:'—'}</span><span>Top 3:<br>${tops||'—'}</span></div>`}).join('');
   this.panel.querySelector('#mdNext').textContent=ok?'LOGIK OK':'PRÜFEN';
   this.panel.querySelector('#mdNextText').innerHTML=ok?'<b>Die Auswahl reagiert plausibel.</b><span>Dann können wir den eigentlichen 100-Personen-Mesh-Fit wieder freigeben.</span>':'<b>Noch keinen großen Test.</b><span>Die Auswahl/Gewichtung zeigt eine konkrete Auffälligkeit, die wir zuerst korrigieren.</span>';
+ }
+
+
+ auditRaw(r,k){
+  const aliases={
+   chestBreadth:["chestBreadth","chestbreadth"],
+   chestDepth:["chestDepth","chestdepth"],
+   waistBreadth:["waistBreadth","waistbreadth"],
+   waistDepth:["waistDepth","waistdepth"],
+   hipBreadth:["hipBreadth","hipbreadth"],
+   shoulder:["shoulder","shoulderBreadth","biacromialBreadth"],
+   torso:["torso","shoulderToCrotch"],
+   neckBase:["neckBase","neckBaseCirc","neckCircumference"]
+  };
+  for(const key of aliases[k]||[k])if(Number.isFinite(+r[key]))return +r[key];
+  return NaN;
+ }
+ stats(a){
+  const x=a.filter(Number.isFinite);if(!x.length)return {n:0,mae:NaN,bias:NaN,p90:NaN};
+  const abs=x.map(Math.abs).sort((a,b)=>a-b),bias=x.reduce((s,v)=>s+v,0)/x.length,mae=abs.reduce((s,v)=>s+v,0)/abs.length;
+  const p90=abs[Math.min(abs.length-1,Math.floor((abs.length-1)*.9))];
+  return {n:x.length,mae,bias,p90};
+ }
+ async runTargetAudit(){
+  const rows=(this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,100);
+  if(rows.length<50){alert('Nicht genug Validation-Personen geladen.');return}
+  const prog=this.panel.querySelector('#auditProgress'),box=this.panel.querySelector('#auditResult'),snap=this.engine.snapshot();
+  prog.classList.remove('hidden');this.panel.querySelector('#auditStatus').textContent='LÄUFT';this.abort=false;
+  const keys=["chestBreadth","chestDepth","waistBreadth","waistDepth","hipBreadth","shoulder","torso","neckBase"];
+  const data={};for(const k of keys)data[k]={solverVsAns:[],meshVsAns:[],meshVsSolver:[]};
+  const examples=[],samples=[];const tStart=performance.now();
+  try{
+   for(let i=0;i<rows.length;i++){
+    if(this.abort)break;const t0=performance.now(),r=rows[i];
+    await this.baseline(r);
+    const mesh=this.current(),tgt=this.target(r),ex={index:i+1,vals:{}};
+    for(const k of keys){
+     const raw=this.auditRaw(r,k),pred=tgt[k],m=mesh[k];
+     if(Number.isFinite(raw)&&Number.isFinite(pred))data[k].solverVsAns.push(pred-raw);
+     if(Number.isFinite(raw)&&Number.isFinite(m))data[k].meshVsAns.push(m-raw);
+     if(Number.isFinite(pred)&&Number.isFinite(m))data[k].meshVsSolver.push(m-pred);
+     if(i<5)ex.vals[k]={raw,pred,mesh:m};
+    }
+    if(i<5)examples.push(ex);
+    const sec=(performance.now()-t0)/1000;if(sec>.001&&sec<120)samples.push(sec);if(samples.length>20)samples.shift();
+    const done=i+1,pct=100*done/rows.length,med=samples.length?[...samples].sort((a,b)=>a-b)[Math.floor(samples.length/2)]:NaN;
+    this.panel.querySelector('#auditPct').textContent=pct.toFixed(0)+'%';this.panel.querySelector('#auditBar').style.width=pct+'%';this.panel.querySelector('#auditCount').textContent=`${done} / ${rows.length}`;
+    this.panel.querySelector('#auditEta').textContent=Number.isFinite(med)&&done>2?`ca. ${Math.max(0,Math.round(med*(rows.length-done)/60))} min verbleibend`:'Restzeit wird geschätzt …';
+    await new Promise(q=>setTimeout(q,0));
+   }
+   const summary={n:rows.length,measures:{}};
+   for(const k of keys)summary.measures[k]={solverVsAns:this.stats(data[k].solverVsAns),meshVsAns:this.stats(data[k].meshVsAns),meshVsSolver:this.stats(data[k].meshVsSolver)};
+   this.renderTargetAudit(summary,examples);
+  }finally{this.engine.restore(snap);this.ui.sync();this.engine.computeMetrics()}
+ }
+ renderTargetAudit(s,examples){
+  const box=this.panel.querySelector('#auditResult'),cd=s.measures.chestDepth,wd=s.measures.waistDepth;
+  const ratio=(x)=>Number.isFinite(x.meshVsSolver.mae)&&Number.isFinite(x.solverVsAns.mae)?x.meshVsSolver.mae-x.solverVsAns.mae:NaN;
+  const meshDominates=[cd,wd].filter(x=>ratio(x)>.5).length;
+  const solverBad=[cd,wd].filter(x=>x.solverVsAns.mae>2.5).length;
+  let verdict,title;
+  if(solverBad>=1){title='ZIELMODELL PRÜFEN';verdict='Schon das statistisch vorhergesagte Ziel liegt deutlich vom echten ANSUR-Maß entfernt. Dann liegt der Hauptfehler vor dem Mesh-Fitter.'}
+  else if(meshDominates>=1){title='MESH-UMSETZUNG IST ENGPASS';verdict='Die Solver-Ziele liegen deutlich näher an ANSUR als das erzeugte Mesh. Dann lohnt sich der gezielte Mesh-Fitter.'}
+  else{title='GEMISCHTES BILD';verdict='Statistik und Mesh tragen beide relevant zum Restfehler bei. Wir entscheiden maßweise.'}
+  const fmt2=x=>Number.isFinite(x)?x.toFixed(2):'—';
+  box.innerHTML=`<div class="optimizerHero"><small>100-PERSONEN ZIEL-AUDIT</small><strong>${title}</strong><span>${verdict}</span></div>
+   <div class="batchMeasureMatrix"><b>MAE je Ebene</b>${Object.entries(s.measures).map(([k,v])=>`<span>${k}: Solver↔ANSUR <strong>${fmt2(v.solverVsAns.mae)}</strong> · Mesh↔ANSUR <strong>${fmt2(v.meshVsAns.mae)}</strong> · Mesh↔Solver <strong>${fmt2(v.meshVsSolver.mae)}</strong> cm</span>`).join('')}</div>
+   <div class="batchMeasureMatrix"><b>Bias (Vorzeichen zeigt Richtung)</b>${Object.entries(s.measures).map(([k,v])=>`<span>${k}: Solver ${v.solverVsAns.bias>=0?'+':''}${fmt2(v.solverVsAns.bias)} · Mesh ${v.meshVsAns.bias>=0?'+':''}${fmt2(v.meshVsAns.bias)} cm</span>`).join('')}</div>
+   <div class="batchInfo"><b>5 Beispiele · Brust/Taille</b>${examples.map(e=>{const c=e.vals.chestDepth||{},w=e.vals.waistDepth||{};return `<span>P${e.index}: Brusttiefe ANSUR ${fmt2(c.raw)} → Ziel ${fmt2(c.pred)} → Mesh ${fmt2(c.mesh)} · Taillentiefe ANSUR ${fmt2(w.raw)} → Ziel ${fmt2(w.pred)} → Mesh ${fmt2(w.mesh)}</span>`}).join('')}</div>`;
+  this.panel.querySelector('#auditStatus').textContent='ERLEDIGT';
  }
 
  async run(){const rows=this.rows();if(rows.length<5){alert('Es sind nicht genug Validation-Personen geladen. Bitte den gespeicherten Datensatz laden.');return}this.abort=false;this.panel.querySelector('#mdProgress').classList.remove('hidden');this.panel.querySelector('#mdStatus').textContent='LÄUFT';const snap=this.engine.snapshot(),people=[];try{for(let i=0;i<5;i++){if(this.abort)break;people.push(await this.diagnosePerson(rows[i],i+1));const p=(i+1)/5*100;this.panel.querySelector('#mdPct').textContent=p.toFixed(0)+'%';this.panel.querySelector('#mdBar').style.width=p+'%';this.panel.querySelector('#mdCount').textContent=`${i+1} / 5`;await new Promise(r=>setTimeout(r,0))}const valid=people.filter(x=>!x.problem),morphWorks=valid.filter(x=>x.morphMeshDelta>1e-7&&x.morphMeasureDelta>.005).length,stale=valid.filter(x=>x.staleAfterRelock).length,stateChanges=valid.filter(x=>x.relockStateChanged).length;this.state.result={at:new Date().toISOString(),people,morphWorks,stale,stateChanges,n:valid.length};this.save();this.render(this.state.result)}finally{this.engine.restore(snap);this.ui.sync();this.engine.computeMetrics()}}

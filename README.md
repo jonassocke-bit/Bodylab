@@ -1,4 +1,4 @@
-# BODY LAB v3.21.8
+# BODY LAB v3.21.9
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -436,3 +436,7 @@ A single missing `}` has been restored. The diagnostic error reporting and the m
 Exact browser-reported fix for `calibration.js` line 24:
 one redundant closing brace at EOF was removed.
 No Objective/Morph diagnosis logic was changed.
+
+
+## v3.21.9 — 100-Personen Ziel-Audit
+Vergleicht für 100 Validation-Personen ANSUR-Rohmaß, eingefrorenes Solver-Ziel und tatsächliches Baseline-Mesh. Kein Training, kein Morph-Tuning.
