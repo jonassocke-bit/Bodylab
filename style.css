@@ -293,3 +293,9 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
 #measureReviewPanel .mrItem{min-width:118px}
 
 .savedBatchInfo{border:1px solid rgba(185,232,192,.18)}.savedBatchInfo b{color:#b9e8c0}
+
+.batchProgressRich{margin:10px 0 14px;padding:12px 14px;border-radius:14px;background:rgba(31,31,35,.94);border:1px solid rgba(255,255,255,.08)}
+.batchProgressTop,.batchProgressMeta{display:flex;justify-content:space-between;gap:10px;align-items:center}
+.batchProgressTop{font-size:10px}.batchProgressMeta{font-size:8px;color:#999;margin-top:7px}
+.batchProgressTrack{height:8px;border-radius:8px;background:#151518;overflow:hidden;margin-top:9px;border:1px solid rgba(255,255,255,.06)}
+.batchProgressTrack>div{height:100%;width:0%;border-radius:8px;background:#eee;transition:width .15s linear}

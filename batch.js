@@ -149,7 +149,7 @@ export class BatchLab{
  render(){
   this.panel.innerHTML=`
    <div class="generatorHead">
-    <div><strong>BODY LAB · BATCH LAB</strong><small>V3.12 · Datensatz rein → Fragebogenvergleich raus</small></div>
+    <div><strong>BODY LAB · BATCH LAB</strong><small>V3.13 · Datensatz rein → Fragebogenvergleich raus</small></div>
     <button id="batchClose">Schließen</button>
    </div>
    <div class="generatorIntro">
@@ -238,7 +238,11 @@ export class BatchLab{
     <button id="batchAbort" disabled>Abbrechen</button>
     <button id="batchExport" disabled>Ergebnis exportieren</button>
    </div>
-   <div id="batchProgress" class="generatorProgress hidden"></div>
+   <div id="batchProgress" class="generatorProgress batchProgressRich hidden">
+    <div class="batchProgressTop"><b id="batchProgressTitle">Batch läuft …</b><span id="batchProgressPct">0%</span></div>
+    <div class="batchProgressTrack"><div id="batchProgressBar"></div></div>
+    <div class="batchProgressMeta"><span id="batchProgressCount">0 / 0 Modellläufe</span><span id="batchProgressEta">Restzeit wird geschätzt …</span></div>
+   </div>
    <div id="batchResults" class="batchResults"></div>
   `;
   this.panel.querySelector("#batchClose").onclick=()=>this.panel.classList.add("hidden");
@@ -379,8 +383,49 @@ export class BatchLab{
   }
   return all.sort((a,b)=>a.use.length-b.use.length||a.name.localeCompare(b.name));
  }
+ formatTime(sec){
+  if(!Number.isFinite(sec)||sec<0)return "wird geschätzt …";
+  sec=Math.round(sec);
+  if(sec<60)return `${sec} s`;
+  const min=Math.floor(sec/60),s=sec%60;
+  if(min<60)return `${min}:${String(s).padStart(2,"0")} min`;
+  return `${Math.floor(min/60)} h ${min%60} min`;
+ }
+ beginProgress(total){
+  this._batchTiming={total,done:0,start:performance.now(),last:performance.now(),samples:[]};
+  const el=this.panel.querySelector("#batchProgress");el?.classList.remove("hidden");
+  this.updateProgress(0,total,"Batch startet …");
+ }
+ updateProgress(done,total,label="Batch läuft …"){
+  const t=this._batchTiming||(this._batchTiming={total,done:0,start:performance.now(),last:performance.now(),samples:[]});
+  const now=performance.now();
+  if(done>t.done){
+   const per=((now-t.last)/1000)/Math.max(1,done-t.done);
+   if(Number.isFinite(per)&&per>.001&&per<300)t.samples.push(per);
+   if(t.samples.length>30)t.samples.shift();
+   t.last=now;t.done=done;
+  }
+  const pct=total?Math.min(100,Math.max(0,100*done/total)):0;
+  const median=t.samples.length?[...t.samples].sort((a,b)=>a-b)[Math.floor(t.samples.length/2)]:NaN;
+  const avg=done?((now-t.start)/1000)/done:NaN;
+  const secPer=t.samples.length>=3?median:avg;
+  const eta=done>=2?secPer*Math.max(0,total-done):NaN;
+  const title=this.panel.querySelector("#batchProgressTitle"),pc=this.panel.querySelector("#batchProgressPct"),
+        bar=this.panel.querySelector("#batchProgressBar"),count=this.panel.querySelector("#batchProgressCount"),
+        et=this.panel.querySelector("#batchProgressEta");
+  if(title)title.textContent=label;if(pc)pc.textContent=`${pct.toFixed(1)}%`;if(bar)bar.style.width=`${pct.toFixed(1)}%`;
+  if(count)count.textContent=`${done} / ${total} Modellläufe`;
+  if(et)et.textContent=done>=2?`ca. ${this.formatTime(eta)} verbleibend`:"Restzeit wird geschätzt …";
+ }
+ finishProgress(label="Batch abgeschlossen"){
+  const t=this._batchTiming;if(!t)return;
+  this.updateProgress(t.total,t.total,label);
+  const et=this.panel.querySelector("#batchProgressEta");
+  if(et)et.textContent=`Fertig in ${this.formatTime((performance.now()-t.start)/1000)}`;
+ }
  async tick(text,sub){
-  const p=this.panel.querySelector("#batchProgress");p.classList.remove("hidden");p.innerHTML=`<b>${esc(text)}</b><span>${esc(sub||"")}</span>`;
+  const title=this.panel.querySelector("#batchProgressTitle");
+  if(title)title.textContent=text;
   await new Promise(r=>setTimeout(r,0));
  }
  async solveCase(row,scenario){
@@ -437,6 +482,7 @@ export class BatchLab{
   const raw=[],summary=[];
   try{
    let done=0,total=rows.length*scenarios.length;
+   this.beginProgress(total);
    for(const s of scenarios){
     const errors=Object.fromEntries(MEASURE_KEYS.map(k=>[k,[]]));
     const inputErrors=Object.fromEntries(MEASURE_KEYS.map(k=>[k,[]]));
@@ -449,8 +495,10 @@ export class BatchLab{
      const r=rows[ri];
      if(s.use.some(k=>r[k]==null))continue;
      this.updateGenderDiag(rows,r,s);
-     await this.tick(`${s.name} · Person ${ri+1}/${rows.length}`,`${done}/${total} Modellläufe · ${r.gender===0?"♀ Female":r.gender===1?"♂ Male":"Neutral"}`);
+     this.updateProgress(done,total,`${s.name} · Person ${ri+1}/${rows.length}`);
+     await this.tick(`${s.name} · Person ${ri+1}/${rows.length}`,`${done}/${total} Modellläufe`);
      const out=await this.solveCase(r,s);usedRows++;done++;
+     this.updateProgress(done,total,`${s.name} · Person ${ri+1}/${rows.length}`);
      const rec={
       scenario:s.id,scenarioName:s.name,row:r.sourceRow,inputs:s.use,
       sourceGender:r.gender,sourceSex:r.gender===0?"female":r.gender===1?"male":"neutral",
@@ -503,7 +551,7 @@ export class BatchLab{
    }
    summary.sort((a,b)=>(a.fullMAE||999)-(b.fullMAE||999));
    this.results={
-    build:"BODY LAB v3.12.0",createdAt:new Date().toISOString(),
+    build:"BODY LAB v3.13.0",createdAt:new Date().toISOString(),
     sourceRows:rows.length,
     genderComposition:{
      female:rows.filter(r=>r.gender===0).length,
@@ -518,6 +566,7 @@ export class BatchLab{
    this.renderBlindValidation();
    this.panel.querySelector("#batchExport").disabled=false;
    await this.persistence.updateResults(this.results,{limit:lim,mode:this.panel.querySelector("#batchMode").value});this.renderSavedInfo();
+   this.finishProgress("Batch abgeschlossen");
   }catch(err){
    if(err.message!=="__ABORT__")console.error(err),alert("Batchfehler: "+(err.message||err));
   }finally{

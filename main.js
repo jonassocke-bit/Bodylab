@@ -7,6 +7,8 @@ import {BatchLab} from "./batch.js";
 import {CalibrationLab} from "./calibration.js";
 import {CalibratedSolverV37} from "./solver-v37.js";
 import {SolverV312} from "./solver-v312.js";
+import {FrozenSolverV311} from "./solver-v311-frozen.js";
+import {FinalValidationV313} from "./final-validation.js";
 import {MeasureReviewLab} from "./measure-review.js";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
@@ -35,13 +37,15 @@ async function boot(){
  const batchLab=new BatchLab(engine,ui,measurementLab);
  const solverV37=new CalibratedSolverV37(engine,ui,measurementLab,batchLab);
  const solverV312=new SolverV312(engine,ui,measurementLab,batchLab);
+ const frozenSolverV311=new FrozenSolverV311(engine,ui,measurementLab,batchLab);
  const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV312);
+ const finalValidationV313=new FinalValidationV313(engine,ui,measurementLab,batchLab,frozenSolverV311);
  const measureReviewLab=new MeasureReviewLab(engine);
  engine.computeMetrics();
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
  setTimeout(()=>card.classList.add("hidden"),500);
 
- window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,measureReviewLab};
+ window.BodyLab={engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,frozenSolverV311,finalValidationV313,measureReviewLab};
 }
 boot().catch(err=>{
  console.error(err);
