@@ -41,7 +41,7 @@ async function boot(){
  const frozenSolverV311=new FrozenSolverV311(engine,ui,measurementLab,batchLab);
  const finalSolverV315=new SolverV315(engine,ui,measurementLab,batchLab);
  const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV312);
- const finalValidationV314=new FinalValidationV315(engine,ui,measurementLab,batchLab,frozenSolverV311,finalSolverV315);
+ const finalValidationV315=new FinalValidationV315(engine,ui,measurementLab,batchLab,frozenSolverV311,finalSolverV315);
  const measureReviewLab=new MeasureReviewLab(engine);
  engine.computeMetrics();
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
