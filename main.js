@@ -1,17 +1,17 @@
-import {probeBootModules} from "./boot-probe.js?v=3.21.6";
+import {probeBootModules} from "./boot-probe.js?v=3.21.7";
 
-import {BodyEngine} from "./engine.js?v=3.21.6";
-import {BodyUI} from "./ui.js?v=3.21.6";
-import {setupDebug} from "./debug.js?v=3.21.6";
-import {MeasurementLab} from "./generator.js?v=3.21.6";
-import {BatchLab} from "./batch.js?v=3.21.6";
-import {CalibrationLab} from "./calibration.js?v=3.21.6";
-import {CalibratedSolverV37} from "./solver-v37.js?v=3.21.6";
-import {SolverV312} from "./solver-v312.js?v=3.21.6";
-import {FrozenSolverV311} from "./solver-v311-frozen.js?v=3.21.6";
-import {FinalValidationV315} from "./final-validation.js?v=3.21.6";
-import {SolverV316} from "./solver-v316.js?v=3.21.6";
-import {MeasureReviewLab} from "./measure-review.js?v=3.21.6";
+import {BodyEngine} from "./engine.js?v=3.21.7";
+import {BodyUI} from "./ui.js?v=3.21.7";
+import {setupDebug} from "./debug.js?v=3.21.7";
+import {MeasurementLab} from "./generator.js?v=3.21.7";
+import {BatchLab} from "./batch.js?v=3.21.7";
+import {CalibrationLab} from "./calibration.js?v=3.21.7";
+import {CalibratedSolverV37} from "./solver-v37.js?v=3.21.7";
+import {SolverV312} from "./solver-v312.js?v=3.21.7";
+import {FrozenSolverV311} from "./solver-v311-frozen.js?v=3.21.7";
+import {FinalValidationV315} from "./final-validation.js?v=3.21.7";
+import {SolverV316} from "./solver-v316.js?v=3.21.7";
+import {MeasureReviewLab} from "./measure-review.js?v=3.21.7";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
 const APP_VERSION=document.querySelector('meta[name="bodylab-version"]')?.content||"unknown";

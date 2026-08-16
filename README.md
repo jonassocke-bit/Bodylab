@@ -1,4 +1,4 @@
-# BODY LAB v3.21.6
+# BODY LAB v3.21.7
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -426,3 +426,9 @@ Exact fix for the reported browser error:
 
 Cause: the `CalibrationLab` constructor was not closed before the `stampVersion()` class method.
 A single missing `}` has been restored. The diagnostic error reporting and the metadata-based morph lookup remain intact.
+
+
+## v3.21.7 — calibration.js parser hotfix
+Safari reported `calibration.js` line 24 parser error.
+Cause: one extra closing brace remained at the end of the class.
+This build removes only that brace and bumps cache references to v3.21.7.
