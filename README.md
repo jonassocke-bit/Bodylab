@@ -1,4 +1,6 @@
-# BODY LAB v3.21.5
+# BODY LAB v3.21.6
+
+> **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
 BODY LAB V3.20.1
 
@@ -379,5 +381,48 @@ Calibration UI is intentionally reduced to five steps:
 Legacy V3.7/V3.11/V3.12/V3.15 calibration experiments and sensitivity-lab UI are removed from the visible Calibration menu.
 
 
-## V3.21.5
-Minimaler Fix auf Basis der nachweislich funktionierenden V3.20.1. Nur Guided Mesh Fit + korrigierte Morph-Suche ergänzt.
+## V3.21 — Guided Mesh Fit
+Five-step guided mesh-fit workflow after final calibration. Statistical solver remains frozen.
+
+
+## v3.21.2 — Version consistency + Morph-ID diagnosis fix
+
+- `version.js` is the single source of truth for the current build.
+- The same version is shown in the top-left app badge, browser/page title, Calibration/Mesh-Fit menu and GitHub README.
+- `VERSION` contains the machine-readable current version.
+- The previous diagnostic incorrectly searched semantic words inside compact modifier IDs such as `d24`.
+  V3.21.2 discovers torso morphs through `modifier-config.js` metadata (`group` / `target`) and then applies the corresponding compact ID to `directState`.
+- The diagnosis therefore must now find actual controls such as `torso-scale-depth`, `hip-scale-depth`, `stomach-navel`, etc., rather than returning an empty morph list.
+
+
+### Version-Anzeige-Check für v3.21.2
+Nach dem Upload auf GitHub müssen dieselben Werte sichtbar sein:
+- App oben links: `BODY LAB · v3.21.2`
+- Browser-/Seitentitel: `Harness Body Lab v3.21.2`
+- Calib-Menü: `V3.21.2`
+- Mesh-Fit/Diagnose: `V3.21.2`
+- GitHub README: `BODY LAB v3.21.2`
+- Datei `VERSION`: `3.21.2`
+- ZIP/Release-Dateiname: `BODYLAB_V3.21.2_...`
+
+
+## v3.21.3 – Boot-Fix
+- Versionsquelle ohne zusätzliche JavaScript-Datei direkt in `index.html`.
+- Morph-Metadaten-Fix aus v3.21.2 bleibt enthalten.
+- Alle JavaScript-Dateien wurden vor Ausgabe syntaktisch geprüft.
+
+
+## v3.21.4 — Exact Boot Diagnostic
+- All JS/module URLs are cache-busted with `?v=3.21.4` to prevent Safari/GitHub Pages from mixing old modules with the new build.
+- Boot errors now show exact filename, line and column where available.
+- A pre-boot module probe explicitly loads the dynamic assets (`body-morphs.js`, `face-morphs.js`, config, macro meta, rig data) before the app starts.
+- If one of those assets is stale or syntactically invalid, the red error card names that asset directly.
+
+
+## v3.21.6 — calibration.js syntax hotfix
+
+Exact fix for the reported browser error:
+`calibration.js` line 15, `SyntaxError: Unexpected token '{'`.
+
+Cause: the `CalibrationLab` constructor was not closed before the `stampVersion()` class method.
+A single missing `}` has been restored. The diagnostic error reporting and the metadata-based morph lookup remain intact.
