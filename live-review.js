@@ -1,6 +1,6 @@
 
 import * as THREE from "three";
-import {MEASURES} from "./measure-review.js?v=3.30.0";
+import {MEASURES} from "./measure-review.js?v=3.30.1";
 
 const KEY="bodylab_live_manual_review_v330";
 const fmt=x=>Number.isFinite(x)?x.toFixed(2):"—";
@@ -22,7 +22,7 @@ export class LiveManualReview{
   this.rows=[];this.index=0;this.selected="chestDepth";this.busy=false;this.review=this.load();
   this.group=new THREE.Group();this.group.visible=false;this.group.renderOrder=95;engine.scene.add(this.group);
   this.hitMeshes=[];this.pointerDown=null;
-  this.build();this.bind3D();
+  this.build();this.bindResizablePanel();this.bind3D();
   this.button.disabled=false;this.button.onclick=()=>this.toggle();
  }
  load(){try{return JSON.parse(localStorage.getItem(KEY)||"{}")}catch(e){return {}}}
@@ -35,9 +35,10 @@ export class LiveManualReview{
  }
  build(){
   this.panel.innerHTML=`
-   <div class="mrSheetHandle"><span></span></div>
+   <div class="mrSheetHandle" id="lmrHandle"><span></span></div>
+   <div class="lmrScroll">
    <div class="lmrHead">
-    <div><div class="sectionLabel">LIVE-MESS-REVISION · V3.30.0</div><h2>10 Personen manuell prüfen</h2>
+    <div><div class="sectionLabel">LIVE-MESS-REVISION · V3.30.1</div><h2>10 Personen manuell prüfen</h2>
     <p>Studienwert ↔ aktuelles Mesh. Markierung am Modell oder Tabellenzeile antippen.</p></div>
     <button id="lmrClose">Schließen</button>
    </div>
@@ -58,6 +59,7 @@ export class LiveManualReview{
    <div class="lmrFooter">
     <button data-v="ok">✓ plausibel</button><button data-v="bad">✕ falsch</button><button data-v="unclear">? unklar</button>
     <textarea id="lmrNote" placeholder="Notiz zu diesem Maß / dieser Person"></textarea>
+   </div>
    </div>`;
   this.panel.querySelector("#lmrClose").onclick=()=>this.toggle(false);
   this.panel.querySelector("#lmrPrev").onclick=()=>this.setPerson(this.index-1);
@@ -66,6 +68,27 @@ export class LiveManualReview{
   this.panel.querySelector("#lmrBaseline").onclick=()=>this.buildCurrent(false);
   this.panel.querySelectorAll(".lmrFooter button[data-v]").forEach(b=>b.onclick=()=>this.mark(b.dataset.v));
   this.panel.querySelector("#lmrNote").oninput=()=>this.note();
+ }
+ bindResizablePanel(){
+  const handle=this.panel.querySelector("#lmrHandle");
+  let top=Math.max(90,window.innerHeight*.42),drag=false,sy=0,st=0;
+  const set=y=>{
+   top=Math.max(72,Math.min(window.innerHeight-105,y));
+   this.panel.style.setProperty("--lmrTop",top+"px");
+  };
+  set(top);
+  handle.onpointerdown=e=>{
+   drag=true;sy=e.clientY;st=top;
+   handle.setPointerCapture?.(e.pointerId);
+   e.preventDefault();
+  };
+  handle.onpointermove=e=>{
+   if(!drag)return;
+   set(st+e.clientY-sy);
+   e.preventDefault();
+  };
+  handle.onpointerup=handle.onpointercancel=()=>drag=false;
+  window.addEventListener("resize",()=>set(Math.min(top,window.innerHeight-105)));
  }
  key(){
   const r=this.rows[this.index];return r?`${r.sourceRow??this.index}:${this.selected}`:`${this.index}:${this.selected}`

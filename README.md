@@ -1,4 +1,4 @@
-# BODY LAB v3.30.0
+# BODY LAB v3.30.1
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -548,3 +548,14 @@ Adds a manual ten-person revision mode:
 - per-person/per-measure plausibility status and notes saved locally.
 
 This mode does not train or alter the frozen calibration model.
+
+
+## v3.30.1 — Resizable Live Review Sheet
+The manual Live Review now behaves like the main Body Lab bottom sheet:
+- drag the handle vertically to pin the panel at any useful height;
+- the panel remains anchored to the bottom;
+- only the contents scroll inside the chosen height;
+- header, person navigation, selected-measure card and action rows are more compact;
+- the mannequin remains visible above the sheet and 3D measurement markers remain interactive.
+
+No solver, calibration or mesh-fit logic changed in this patch.

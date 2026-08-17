@@ -321,3 +321,79 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
 .lmrTableWrap{overflow:auto;max-height:44vh;border:1px solid #33343b;border-radius:16px}.lmrTable{width:100%;border-collapse:collapse;font-size:13px}.lmrTable th{position:sticky;top:0;background:#18181c;z-index:2}.lmrTable th,.lmrTable td{padding:10px 8px;border-bottom:1px solid #2b2b31;text-align:right}.lmrTable th:first-child,.lmrTable td:first-child{text-align:left}.lmrTable tr{cursor:pointer}.lmrTable tr.active{background:#353037;outline:1px solid #866}.lmrTable tr.ok td:first-child{box-shadow:inset 3px 0 #6a7}.lmrTable tr.bad td:first-child{box-shadow:inset 3px 0 #b66}.lmrTable tr.unclear td:first-child{box-shadow:inset 3px 0 #aa7}.lmrTable td small{display:block;color:#888;font-size:10px}.lmrTable .warn{color:#ffb0b0;font-weight:700}
 .lmrFooter{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.lmrFooter textarea{grid-column:1/-1;min-height:74px;background:#222227;color:#eee;border:1px solid #44454d;border-radius:12px;padding:10px}
 @media(max-width:700px){#liveReviewPanel{padding:12px 14px 32px}.lmrSelTitle{display:block}.lmrBig{margin-top:10px;text-align:left}.lmrTable{min-width:560px}.lmrHead h2{font-size:22px}}
+
+
+/* v3.30.1 — resizable/pinnable Live Review sheet */
+#liveReviewPanel{
+  --lmrTop:42vh;
+  position:absolute;
+  z-index:125;
+  left:0;
+  right:0;
+  top:var(--lmrTop);
+  bottom:0;
+  max-height:none;
+  overflow:hidden;
+  padding:0;
+  background:rgba(13,13,16,.97);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:22px 22px 0 0;
+  box-shadow:0 -14px 45px rgba(0,0,0,.45);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+}
+#liveReviewPanel .mrSheetHandle{
+  height:34px;
+  min-height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  cursor:ns-resize;
+  touch-action:none;
+  position:relative;
+  z-index:4;
+  background:rgba(13,13,16,.94);
+}
+#liveReviewPanel .mrSheetHandle span{
+  display:block;
+  width:46px;
+  height:5px;
+  border-radius:5px;
+  background:#8b8b90;
+}
+#liveReviewPanel .lmrScroll{
+  height:calc(100% - 34px);
+  overflow-y:auto;
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+  padding:0 14px calc(22px + env(safe-area-inset-bottom));
+}
+
+/* More compact review UI so the table gets more room */
+#liveReviewPanel .lmrHead{gap:9px;align-items:center}
+#liveReviewPanel .lmrHead h2{font-size:20px;margin:2px 0}
+#liveReviewPanel .lmrHead p{font-size:9px;line-height:1.3}
+#liveReviewPanel .lmrHead .sectionLabel{margin:2px 0 3px}
+#liveReviewPanel .lmrPersonBar{
+  grid-template-columns:46px 1fr 46px;
+  gap:7px;
+  margin:9px 0;
+}
+#liveReviewPanel .lmrPersonBar>div{padding:7px 9px;border-radius:12px}
+#liveReviewPanel .lmrActions{margin:7px 0;gap:6px}
+#liveReviewPanel .lmrActions button{font-size:9px;padding:8px 10px}
+#liveReviewPanel .batchInfo{margin-top:5px;padding:7px}
+#liveReviewPanel .lmrSelected{padding:10px;margin:8px 0;border-radius:14px}
+#liveReviewPanel .lmrSelTitle h3{font-size:18px}
+#liveReviewPanel .lmrSelected details{padding:7px 0}
+#liveReviewPanel .lmrSelected p{font-size:9px;margin:6px 0}
+#liveReviewPanel .lmrTableWrap{max-height:none}
+#liveReviewPanel .lmrTable th,#liveReviewPanel .lmrTable td{padding:8px 7px}
+#liveReviewPanel .lmrFooter{margin-top:8px;gap:6px}
+#liveReviewPanel .lmrFooter button{padding:8px 6px;font-size:10px}
+#liveReviewPanel .lmrFooter textarea{min-height:58px}
+
+@media(max-width:700px){
+ #liveReviewPanel{left:0;right:0;padding:0}
+ #liveReviewPanel .lmrScroll{padding-left:12px;padding-right:12px}
+}
