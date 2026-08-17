@@ -10,7 +10,7 @@ export class GuidedMeshFitV321{
  save(){localStorage.setItem(STORE,JSON.stringify(this.state))}
  rows(){return (this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,5)}
  inject(){const h=document.createElement('div');h.id='meshFitV321';h.innerHTML=`
- <div class="generatorSectionTitle">MESH-FIT · V3.29.0</div>
+ <div class="generatorSectionTitle">MESH-FIT · V3.29.1</div>
  <div class="generatorIntro"><b>Kein weiterer Kalibrierungslauf.</b> Dieser Test prüft an nur 5 Personen die technische Kette: Morphwert → Meshänderung → Messwertänderung → Umfangs-Verriegelung. Erst wenn diese Kette nachweislich funktioniert, wird der 100-Personen-Fit wieder freigeschaltet.</div>
  <section class="fcStep"><div class="fcStepHead"><span>1</span><div><b>5 Personen diagnostizieren</b><small>ca. 1–3 Minuten · verändert kein gespeichertes Modell</small></div><strong id="mdStatus">BEREIT</strong></div>
  <div class="generatorActions"><button id="mdRun" class="primary">Diagnose starten</button><button id="mdAbort">Abbrechen</button></div>
@@ -855,7 +855,7 @@ export class GuidedMeshFitV321{
   const repaired=await this.repairCollateral(r,tgt,depthAnchor);
   return {gender:'Frauen',stage:'ABC',...depthFit,depthAnchor,state:repaired};
  }
-\n ensureLiveHud(){
+ensureLiveHud(){
   if(document.getElementById('fit29Hud'))return;
   const d=document.createElement('div');d.id='fit29Hud';d.style.cssText='position:fixed;left:12px;bottom:92px;z-index:9999;background:#111d;color:#fff;padding:10px 12px;border:1px solid #666;border-radius:14px;font:13px system-ui;display:none;max-width:75vw';document.body.appendChild(d)
  }
@@ -888,7 +888,7 @@ export class GuidedMeshFitV321{
   for(const key of ['hipBreadth','waistBreadth','waistDepth','torso','chestBreadth','shoulder','neckBase']){stages.push(await this.adaptive329Stage(r,tgt,key,anchors,personNo));const now=this.current();if(Number.isFinite(now[key])&&Number.isFinite(tgt[key])&&Math.abs(now[key]-tgt[key])<1.0)anchors[key]=now[key]}
   return {fit,stages}
  }
- emptyV329(total){return {version:'3.29.0',next:0,total,perB:Object.fromEntries(TARGETS.map(([k])=>[k,[]])),perA:Object.fromEntries(TARGETS.map(([k])=>[k,[]])),before:[],after:[],fb:[],fa:[],mb:[],ma:[],fcdB:[],fcdA:[],mcdB:[],mcdA:[],over:{},elapsed:0,done:false}}
+ emptyV329(total){return {version:'3.29.1',next:0,total,perB:Object.fromEntries(TARGETS.map(([k])=>[k,[]])),perA:Object.fromEntries(TARGETS.map(([k])=>[k,[]])),before:[],after:[],fb:[],fa:[],mb:[],ma:[],fcdB:[],fcdA:[],mcdB:[],mcdA:[],over:{},elapsed:0,done:false}}
  renderV329(cp){
   const mean=a=>a?.length?a.reduce((s,v)=>s+v,0)/a.length:NaN,F=x=>Number.isFinite(x)?x.toFixed(2):'—',B=mean(cp.before),A=mean(cp.after),cdB=mean(cp.perB.chestDepth),cdA=mean(cp.perA.chestDepth);
   const regress=TARGETS.map(([k])=>k).filter(k=>Number.isFinite(mean(cp.perA[k]))&&Number.isFinite(mean(cp.perB[k]))&&mean(cp.perA[k])>mean(cp.perB[k])+.20),good=cp.done&&A<B-.2&&mean(cp.fcdA)<=1.2&&regress.length<=1;
@@ -896,7 +896,7 @@ export class GuidedMeshFitV321{
  }
  async runV329Fit(){
   const rows=(this.batch?.rows||[]).filter(r=>role(r)==='validation'&&[r.height,r.weight,r.chest,r.waist,r.hip].every(Number.isFinite)).slice(0,100);if(rows.length<50){alert('Nicht genug Validation-Personen geladen.');return}
-  let cp=this.loadV329Checkpoint();if(!cp||cp.version!=='3.29.0'||cp.total!==rows.length||cp.done)cp=this.emptyV329(rows.length);this.pauseV329=false;this.panel.querySelector('#fit29Progress').classList.remove('hidden');const snap=this.engine.snapshot(),start=performance.now(),samples=[];
+  let cp=this.loadV329Checkpoint();if(!cp||cp.version!=='3.29.1'||cp.total!==rows.length||cp.done)cp=this.emptyV329(rows.length);this.pauseV329=false;this.panel.querySelector('#fit29Progress').classList.remove('hidden');const snap=this.engine.snapshot(),start=performance.now(),samples=[];
   try{for(let i=cp.next;i<rows.length;i++){
    const r=rows[i],t0=performance.now();await this.baseline(r);const bm=this.current(),be=[],gl=r.gender===0?'F':'M',rawCD=this.auditRaw(r,'chestDepth');for(const [k] of TARGETS){const raw=this.auditRaw(r,k);if(Number.isFinite(raw)&&Number.isFinite(bm[k])){const e=Math.abs(bm[k]-raw);cp.perB[k].push(e);be.push(e)}}const bma=be.length?be.reduce((a,b)=>a+b,0)/be.length:NaN;if(Number.isFinite(bma)){cp.before.push(bma);(gl==='F'?cp.fb:cp.mb).push(bma)}if(Number.isFinite(rawCD)) (gl==='F'?cp.fcdB:cp.mcdB).push(Math.abs(bm.chestDepth-rawCD));
    await this.liveYield(`Person ${i+1}/100 · Ausgangsform`);const fit=await this.fitV329Person(r,i+1),am=this.current(),ae=[];for(const [k] of TARGETS){const raw=this.auditRaw(r,k);if(Number.isFinite(raw)&&Number.isFinite(am[k])){const e=Math.abs(am[k]-raw);cp.perA[k].push(e);ae.push(e)}}const ama=ae.length?ae.reduce((a,b)=>a+b,0)/ae.length:NaN;if(Number.isFinite(ama)){cp.after.push(ama);(gl==='F'?cp.fa:cp.ma).push(ama)}if(Number.isFinite(rawCD))(gl==='F'?cp.fcdA:cp.mcdA).push(Math.abs(am.chestDepth-rawCD));for(const st of fit.stages||[])if(st.maxAbs>1.001)cp.over[st.key]=(cp.over[st.key]||0)+1;

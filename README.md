@@ -1,4 +1,4 @@
-# BODY LAB v3.29.0
+# BODY LAB v3.29.1
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -527,7 +527,7 @@ Men retain the already-good direct torso-depth path.
 If validation passes, proceed directly to untouched final holdout and freeze.
 
 
-## v3.29.0 — Resumable Live Multi-Stage Repair
+## v3.29.1 — Resumable Live Multi-Stage Repair
 - checkpoint persisted after every completed validation person
 - start/resume, pause-after-current-person, discard checkpoint
 - calibration menu can be hidden while the optimizer continues; live HUD remains visible
