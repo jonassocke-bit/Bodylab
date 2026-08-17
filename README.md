@@ -1,4 +1,4 @@
-# BODY LAB v4.0.2
+# BODY LAB v4.0.3
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -585,3 +585,14 @@ The BodyM source step is deliberately diagnostic: it verifies S3 listing and COR
 - Supports both one-row front/side mappings and multi-table subject↔photo mappings.
 - If front/side labels are absent, classifies the two silhouettes geometrically: the narrower normalized mask is treated as side view, the wider as front view.
 - Displays table names and headers in Step 1 as a diagnostic fallback.
+
+
+## v4.0.3 — Reference Alignment Lab
+- Stronger BodyM front/side classifier using both normalized width and bilateral symmetry.
+- Classification confidence shown per person.
+- Manual Front↔Side swap and cycling through alternate side-view candidates.
+- Reference silhouette can be displayed directly over the 3D viewport.
+- Front and side camera buttons snap the mannequin to corresponding comparison views.
+- Automatic height/center alignment plus manual opacity, scale, X and Y fine adjustment.
+- Broad anatomical guide bands are displayed for visual alignment only; they are not treated as measurement truth.
+- No automatic silhouette fitter is changed or trusted in this release. The goal is to validate the reference/alignment pipeline first.

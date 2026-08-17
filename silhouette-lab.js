@@ -1,4 +1,5 @@
-const V='4.0.2';
+import * as THREE from "three";
+const V='4.0.3';
 const S3='https://amazon-bodym.s3.us-west-2.amazonaws.com';
 const fmt=x=>Number.isFinite(+x)?(+x).toFixed(2):'—';
 const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
@@ -50,7 +51,12 @@ function first(o,keys){for(const k of keys){if(k in o&&String(o[k]).trim()!=='')
 function normGender(v){const s=String(v??'').toLowerCase();if(s==='0'||s.startsWith('f')||s.includes('female')||s.includes('woman'))return 0;if(s==='1'||s.startsWith('m')||s.includes('male')||s.includes('man'))return 1;return NaN}
 
 export class SilhouetteLab{
- constructor(engine,ui,batch){this.engine=engine;this.ui=ui;this.batch=batch;this.panel=document.getElementById('silhouettePanel');this.btn=document.getElementById('silhouetteToggle');this.keys=[];this.people=[];this.personIndex=0;this.ref={front:null,side:null};this.running=false;this.pause=false;this.build();this.bindSheet();this.btn.disabled=false;this.btn.onclick=()=>this.toggle()}
+ constructor(engine,ui,batch){
+ this.engine=engine;this.ui=ui;this.batch=batch;this.panel=document.getElementById('silhouettePanel');this.btn=document.getElementById('silhouetteToggle');
+ this.keys=[];this.people=[];this.personIndex=0;this.ref={front:null,side:null};this.running=false;this.pause=false;
+ this.overlayView='front';this.overlayVisible=true;this.overlayOpacity=.42;this.overlayScale=1;this.overlayX=0;this.overlayY=0;
+ this.build();this.ensureViewportOverlay();this.bindSheet();this.btn.disabled=false;this.btn.onclick=()=>this.toggle()
+}
  build(){this.panel.innerHTML=`
   <div class="silHandle" id="silHandle"><span></span></div><div class="silScroll">
   <div class="silHead"><div><div class="sectionLabel">SILHOUETTE LAB · V${V}</div><h2>BodyM Referenz-Fit</h2><p>Neuer unabhängiger Fitter · alter V3.29-Brustalgorithmus wird hier nicht benutzt.</p></div><button id="silClose">Schließen</button></div>
@@ -59,8 +65,20 @@ export class SilhouetteLab{
   <section class="silStep"><div class="silStepHead"><b>2</b><div><strong>10 Referenzpersonen</strong><small>bevorzugt Training/Test-A · gemischt ♀/♂</small></div><em id="silPeopleState">WARTE</em></div>
    <div class="silPersonNav"><button id="silPrev">‹</button><div><strong id="silPersonTitle">Person –/10</strong><small id="silPersonMeta">–</small></div><button id="silNext">›</button></div>
    <div class="silRefGrid"><div><b>FRONT</b><canvas id="silFront" width="280" height="360"></canvas></div><div><b>SEITE</b><canvas id="silSide" width="280" height="360"></canvas></div></div>
+   <div class="silViewCheck"><span id="silViewConfidence">Ansichten werden klassifiziert …</span><div><button id="silSwapViews">Front ↔ Seite tauschen</button><button id="silNextSide">Andere Seiten-Kandidatin</button></div></div>
    <div id="silMeasures" class="silMeasures"></div></section>
   <section class="silStep"><div class="silStepHead"><b>3</b><div><strong>Alignment & Toleranzzonen</strong><small>Pose-/Bildfehler nicht mit Körperform verwechseln</small></div><em>MANUELL</em></div>
+   <div class="silViewportTools">
+    <div class="silSegment"><button id="silViewFront" class="active">Frontansicht</button><button id="silViewSide">Seitenansicht</button><button id="silOverlayToggle">Referenz ausblenden</button></div>
+    <button id="silAutoAlign" class="primary">Referenz automatisch ausrichten</button>
+    <div class="silGrid compact">
+     <label>Referenz-Deckkraft <input id="silOverlayOpacity" type="range" min="0.05" max="0.9" step="0.05" value="0.42"><span id="silOverlayOpacityV">42 %</span></label>
+     <label>Feinskalierung <input id="silOverlayScale" type="range" min="0.8" max="1.2" step="0.005" value="1"><span id="silOverlayScaleV">100 %</span></label>
+     <label>Horizontal <input id="silOverlayX" type="range" min="-120" max="120" step="1" value="0"><span id="silOverlayXV">0 px</span></label>
+     <label>Vertikal <input id="silOverlayY" type="range" min="-120" max="120" step="1" value="0"><span id="silOverlayYV">0 px</span></label>
+    </div>
+    <div class="batchInfo"><b>Referenz direkt am Mannequin</b><span>Die Silhouette wird nur für die visuelle Ausrichtung über den Viewport gelegt. Erst Höhe/Mittellinie/Pose prüfen; diese Transformation verändert den Körper nicht.</span></div>
+   </div>
    <div class="silGrid">
     <label>Kontur-Toleranz Torso <input id="silTolTorso" type="range" min="0.3" max="3" step="0.1" value="1.2"><span id="silTolTorsoV">1.2 cm</span></label>
     <label>Kontur-Toleranz Gliedmaßen <input id="silTolLimb" type="range" min="0.5" max="5" step="0.1" value="2.5"><span id="silTolLimbV">2.5 cm</span></label>
@@ -80,10 +98,20 @@ export class SilhouetteLab{
    <div class="batchInfo"><b>Alpha-Ziel</b><span>Wir prüfen zuerst, ob BodyM auf deinem iPhone direkt funktioniert und ob der neue Fit sichtbar in die richtige Richtung korrigiert. Noch kein unbeaufsichtigter 100-Personen-Lauf.</span></div></section>
   </div>`;
   this.panel.querySelector('#silClose').onclick=()=>this.toggle(false);this.panel.querySelector('#silConnect').onclick=()=>this.connect();this.panel.querySelector('#silPrev').onclick=()=>this.selectPerson(this.personIndex-1);this.panel.querySelector('#silNext').onclick=()=>this.selectPerson(this.personIndex+1);this.panel.querySelector('#silBaseline').onclick=()=>this.makeBaseline();this.panel.querySelector('#silScore').onclick=()=>this.measureScore(true);this.panel.querySelector('#silFit').onclick=()=>this.liveFit();this.panel.querySelector('#silPause').onclick=()=>{this.pause=true};this.panel.querySelector('#silUndoFit').onclick=()=>this.restoreStart();
+  this.panel.querySelector('#silSwapViews').onclick=()=>this.swapViews();
+  this.panel.querySelector('#silNextSide').onclick=()=>this.cycleSideCandidate();
+  this.panel.querySelector('#silViewFront').onclick=()=>this.setOverlayView('front');
+  this.panel.querySelector('#silViewSide').onclick=()=>this.setOverlayView('side');
+  this.panel.querySelector('#silOverlayToggle').onclick=()=>{this.overlayVisible=!this.overlayVisible;this.panel.querySelector('#silOverlayToggle').textContent=this.overlayVisible?'Referenz ausblenden':'Referenz einblenden';this.drawViewportOverlay()};
+  this.panel.querySelector('#silAutoAlign').onclick=()=>this.autoAlignOverlay();
+  for(const [id,prop,fmtv] of [['OverlayOpacity','overlayOpacity',v=>Math.round(v*100)+' %'],['OverlayScale','overlayScale',v=>Math.round(v*100)+' %'],['OverlayX','overlayX',v=>Math.round(v)+' px'],['OverlayY','overlayY',v=>Math.round(v)+' px']]){
+   const e=this.panel.querySelector('#sil'+id),v=this.panel.querySelector('#sil'+id+'V');
+   e.oninput=()=>{this[prop]=+e.value;v.textContent=fmtv(+e.value);this.drawViewportOverlay()}
+  }
   for(const id of ['TolTorso','TolLimb','TolMeasure','WFront','WSide','WMeasure']){const e=this.panel.querySelector('#sil'+id),v=this.panel.querySelector('#sil'+id+'V');e.oninput=()=>v.textContent=(id.startsWith('Tol')?e.value+' cm':(+e.value).toFixed(1)+'×')}
  }
  bindSheet(){const h=this.panel.querySelector('#silHandle');let top=innerHeight*.39,drag=false,sy=0,st=0;const set=y=>{top=Math.max(72,Math.min(innerHeight-100,y));this.panel.style.setProperty('--silTop',top+'px')};set(top);h.onpointerdown=e=>{drag=true;sy=e.clientY;st=top;h.setPointerCapture?.(e.pointerId)};h.onpointermove=e=>{if(drag)set(st+e.clientY-sy)};h.onpointerup=h.onpointercancel=()=>drag=false}
- toggle(force){const show=force===undefined?this.panel.classList.contains('hidden'):!!force;this.panel.classList.toggle('hidden',!show);this.btn.classList.toggle('active',show)}
+ toggle(force){const show=force===undefined?this.panel.classList.contains('hidden'):!!force;this.panel.classList.toggle('hidden',!show);this.btn.classList.toggle('active',show);if(!show){this.overlayCanvas?.classList.add('hidden')}else{this.overlayCanvas?.classList.remove('hidden');this.drawViewportOverlay()}}
  async connect(){
   const state=this.panel.querySelector('#silSourceState'),info=this.panel.querySelector('#silSourceInfo');
   state.textContent='PRÜFT';
@@ -251,20 +279,39 @@ export class SilhouetteLab{
   const ctx=c.getContext('2d',{willReadFrequently:true}),sc=Math.min(c.width/img.width,c.height/img.height),w=img.width*sc,h=img.height*sc,x=(c.width-w)/2,y=(c.height-h)/2;
   ctx.drawImage(img,x,y,w,h);
   const data=ctx.getImageData(0,0,c.width,c.height),env=this.envelopeFromImageData(data,c.width,c.height);
-  let maxW=0,sum=0,n=0;
-  for(let yy=env.ymin;yy<=env.ymax;yy++){const r=env.rows[yy];if(r){const ww=r.all[1]-r.all[0];maxW=Math.max(maxW,ww);sum+=ww;n++}}
-  return {env,ratio:(n?sum/n:maxW)/Math.max(1,env.pixH)}
+  const mids=[],widths=[];let area=0;
+  for(let yy=env.ymin;yy<=env.ymax;yy++){const r=env.rows[yy];if(r){const ww=r.all[1]-r.all[0]+1;mids.push((r.all[0]+r.all[1])/2);widths.push(ww);area+=ww}}
+  const center=mids.length?[...mids].sort((a,b)=>a-b)[Math.floor(mids.length/2)]:c.width/2;
+  let asym=0,n=0;
+  for(let yy=env.ymin;yy<=env.ymax;yy++){const r=env.rows[yy];if(!r)continue;const L=center-r.all[0],R=r.all[1]-center,W=Math.max(1,L+R);if(L>0&&R>0){asym+=Math.abs(L-R)/W;n++}}
+  const avgW=widths.length?widths.reduce((a,b)=>a+b,0)/widths.length:0;
+  const ratio=avgW/Math.max(1,env.pixH);
+  return {env,ratio,asym:n?asym/n:1,area:area/Math.max(1,env.pixH*env.pixH),key}
  }
- async resolveViews(p){
-  if(p.front&&p.side)return p;
-  const keys=(p.imageIds||[]).map(id=>this.keys.find(k=>stripExt(k).toLowerCase()===id)).filter(Boolean).slice(0,6);
+ async resolveViews(p,force=false){
+  if(p._viewCandidates&&!force){
+   if(!p.front||!p.side){p.front=p._viewCandidates[p._frontIndex||0]?.key;p.side=p._viewCandidates[p._sideIndex||1]?.key}
+   return p
+  }
+  const keys=(p.imageIds||[]).map(id=>this.keys.find(k=>stripExt(k).toLowerCase()===id)).filter(Boolean).slice(0,10);
   if(keys.length<2)throw new Error('Für diese Person wurden weniger als zwei Masken gefunden');
   const scored=[];
-  for(const k of keys){try{const q=await this.maskEnvelopeOnly(k);scored.push({key:k,ratio:q.ratio})}catch{}}
+  for(const k of keys){try{scored.push(await this.maskEnvelopeOnly(k))}catch(e){console.warn('Mask classification',k,e)}}
   if(scored.length<2)throw new Error('Masken konnten nicht geometrisch klassifiziert werden');
-  scored.sort((a,b)=>a.ratio-b.ratio);
-  // side is normally narrower, front wider
-  p.side=scored[0].key;p.front=scored[scored.length-1].key;
+
+  // Front: high bilateral symmetry + broad normalized silhouette.
+  for(const q of scored)q.frontScore=(1-q.asym)*1.8+q.ratio*1.2+q.area*.25;
+  scored.sort((a,b)=>b.frontScore-a.frontScore);
+  const front=scored[0];
+  // Side: prefer asymmetry and narrowness, but never reuse front.
+  const sidePool=scored.slice(1).map(q=>({...q,sideScore:q.asym*2.2-q.ratio*.9+Math.abs(front.ratio-q.ratio)*.4})).sort((a,b)=>b.sideScore-a.sideScore);
+  const side=sidePool[0]||scored[1];
+
+  p._viewCandidates=[front,...sidePool];
+  p._frontIndex=0;p._sideIndex=Math.max(1,p._viewCandidates.findIndex(x=>x.key===side.key));
+  p.front=front.key;p.side=side.key;
+  const sep=Math.abs(front.ratio-side.ratio)+Math.abs(front.asym-side.asym);
+  p._viewConfidence=sep>.14?'HOCH':sep>.07?'MITTEL':'NIEDRIG';
   return p
  }
  pickTen(p){const F=p.filter(x=>x.gender===0),M=p.filter(x=>x.gender===1),out=[];for(let i=0;i<5;i++){if(F[i])out.push(F[i]);if(M[i])out.push(M[i])}for(const x of p)if(out.length<10&&!out.includes(x))out.push(x);return out.slice(0,10)}
@@ -279,16 +326,99 @@ export class SilhouetteLab{
    await this.resolveViews(p);
    this.ref.front=await this.loadMask(p.front,'#silFront');
    this.ref.side=await this.loadMask(p.side,'#silSide');
+   this.panel.querySelector('#silViewConfidence').textContent=`Automatische Ansichtserkennung: ${p._viewConfidence||'—'} · ${p._viewCandidates?.length||2} Masken geprüft`;
    this.renderMeasures();
-   this.panel.querySelector('#silPeopleState').textContent='GELADEN'
+   this.panel.querySelector('#silPeopleState').textContent='GELADEN';
+   this.autoAlignOverlay()
   }catch(e){
    console.error(e);
    this.panel.querySelector('#silPeopleState').textContent='FEHLER';
    this.panel.querySelector('#silSourceInfo').innerHTML+=`<span>Person ${this.personIndex+1}: ${esc(e.message)}</span>`
   }
  }
- async loadMask(key,canvasSel){const img=new Image();img.crossOrigin='anonymous';img.src=S3+'/'+encodeURI(key);await img.decode();const c=this.panel.querySelector(canvasSel),ctx=c.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,c.width,c.height);const sc=Math.min(c.width/img.width,c.height/img.height),w=img.width*sc,h=img.height*sc,x=(c.width-w)/2,y=(c.height-h)/2;ctx.drawImage(img,x,y,w,h);let data;try{data=ctx.getImageData(0,0,c.width,c.height)}catch{throw new Error('CORS erlaubt Bildanzeige, aber nicht das Auslesen der Silhouette')};return this.envelopeFromImageData(data,c.width,c.height)}
+ async loadMask(key,canvasSel){
+ const img=new Image();img.crossOrigin='anonymous';img.src=S3+'/'+encodeURI(key);await img.decode();
+ const c=this.panel.querySelector(canvasSel),ctx=c.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,c.width,c.height);
+ const sc=Math.min(c.width/img.width,c.height/img.height),w=img.width*sc,h=img.height*sc,x=(c.width-w)/2,y=(c.height-h)/2;ctx.drawImage(img,x,y,w,h);
+ let data;try{data=ctx.getImageData(0,0,c.width,c.height)}catch{throw new Error('CORS erlaubt Bildanzeige, aber nicht das Auslesen der Silhouette')};
+ const env=this.envelopeFromImageData(data,c.width,c.height);env.preview=c;env.key=key;return env
+}
  envelopeFromImageData(im,w,h){const border=[];for(let x=0;x<w;x++){for(const y of [0,h-1]){const i=(y*w+x)*4;border.push((im.data[i]+im.data[i+1]+im.data[i+2])/3)}}const borderMean=border.reduce((a,b)=>a+b,0)/border.length,fgDark=borderMean>127;const rows=[];let ymin=h,ymax=0;for(let y=0;y<h;y++){const runs=[];let run=-1;for(let x=0;x<w;x++){const i=(y*w+x)*4,v=(im.data[i]+im.data[i+1]+im.data[i+2])/3,a=im.data[i+3],fg=a>20&&(fgDark?v<128:v>128);if(fg&&run<0)run=x;if((!fg||x===w-1)&&run>=0){runs.push([run,fg&&x===w-1?x:x-1]);run=-1}}if(runs.length){ymin=Math.min(ymin,y);ymax=Math.max(ymax,y);const cx=w/2,center=runs.reduce((best,r)=>Math.abs((r[0]+r[1])/2-cx)<Math.abs((best[0]+best[1])/2-cx)?r:best,runs[0]);rows[y]={all:[Math.min(...runs.map(r=>r[0])),Math.max(...runs.map(r=>r[1]))],center}}}const pixH=Math.max(1,ymax-ymin);return {rows,ymin,ymax,pixH,w,h}}
+ ensureViewportOverlay(){
+  let c=document.getElementById('silViewportOverlay');
+  if(!c){c=document.createElement('canvas');c.id='silViewportOverlay';this.engine.viewport.appendChild(c)}
+  this.overlayCanvas=c;this.resizeOverlay=()=>{const d=Math.min(devicePixelRatio||1,2);c.width=Math.round(innerWidth*d);c.height=Math.round(innerHeight*d);c.style.width=innerWidth+'px';c.style.height=innerHeight+'px';this.drawViewportOverlay()};
+  this.resizeOverlay();window.addEventListener('resize',this.resizeOverlay)
+ }
+ setOverlayView(view){
+  this.overlayView=view;
+  this.panel.querySelector('#silViewFront').classList.toggle('active',view==='front');
+  this.panel.querySelector('#silViewSide').classList.toggle('active',view==='side');
+  this.setReferenceCamera(view);setTimeout(()=>this.autoAlignOverlay(),80)
+ }
+ setReferenceCamera(view){
+  if(!this.engine.body)return;
+  this.engine.body.geometry.computeBoundingBox();const b=this.engine.body.geometry.boundingBox,c=new THREE.Vector3(),sz=new THREE.Vector3();b.getCenter(c);b.getSize(sz);c.x=0;c.z=0;
+  const currentD=Math.max(3.8,this.engine.camera.position.distanceTo(c));
+  this.engine.orbit.target.copy(c);
+  if(view==='front')this.engine.camera.position.set(0,c.y,currentD);
+  else this.engine.camera.position.set(currentD,c.y,0);
+  this.engine.camera.lookAt(c);this.engine.orbit.update()
+ }
+ projectedBodyBox(){
+  const pos=this.engine.body?.geometry?.attributes?.position?.array;if(!pos)return null;
+  const cam=this.engine.camera,body=this.engine.body,pt=new THREE.Vector3(),w=innerWidth,h=innerHeight;
+  body.updateMatrixWorld(true);cam.updateMatrixWorld(true);
+  let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+  for(let i=0;i<pos.length;i+=3){
+   pt.set(pos[i],pos[i+1],pos[i+2]).applyMatrix4(body.matrixWorld).project(cam);
+   if(pt.z<-1||pt.z>1)continue;
+   const x=(pt.x*.5+.5)*w,y=(-pt.y*.5+.5)*h;
+   minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y)
+  }
+  return Number.isFinite(minX)?{minX,maxX,minY,maxY,w:maxX-minX,h:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2}:null
+ }
+ autoAlignOverlay(){
+  this.overlayScale=1;this.overlayX=0;this.overlayY=0;
+  for(const [id,v] of [['OverlayScale',1],['OverlayX',0],['OverlayY',0]]){const e=this.panel.querySelector('#sil'+id);if(e)e.value=v}
+  const sv=this.panel.querySelector('#silOverlayScaleV'),xv=this.panel.querySelector('#silOverlayXV'),yv=this.panel.querySelector('#silOverlayYV');if(sv)sv.textContent='100 %';if(xv)xv.textContent='0 px';if(yv)yv.textContent='0 px';
+  this.drawViewportOverlay()
+ }
+ drawViewportOverlay(){
+  const c=this.overlayCanvas;if(!c)return;const d=c.width/Math.max(1,innerWidth),ctx=c.getContext('2d');ctx.setTransform(1,0,0,1,0,0);ctx.clearRect(0,0,c.width,c.height);
+  if(!this.overlayVisible)return;
+  const ref=this.ref[this.overlayView];if(!ref?.preview)return;
+  const box=this.projectedBodyBox();if(!box)return;
+  ctx.setTransform(d,0,0,d,0,0);
+  const src=ref.preview,env=ref;
+  // Align silhouette bounding-box height and center to the projected mannequin.
+  const refH=Math.max(1,env.pixH),baseScale=box.h/refH*this.overlayScale;
+  const refCx=(()=>{let a=0,n=0;for(let y=env.ymin;y<=env.ymax;y++){const r=env.rows[y];if(r){a+=(r.all[0]+r.all[1])/2;n++}}return n?a/n:src.width/2})();
+  const refCy=(env.ymin+env.ymax)/2;
+  const dx=box.cx-refCx*baseScale+this.overlayX,dy=box.cy-refCy*baseScale+this.overlayY;
+  ctx.globalAlpha=this.overlayOpacity;
+  ctx.imageSmoothingEnabled=true;
+  ctx.drawImage(src,dx,dy,src.width*baseScale,src.height*baseScale);
+  // Anatomical guide bands: deliberately broad; alignment aid, not ground truth.
+  ctx.globalAlpha=.7;ctx.lineWidth=1;ctx.font='11px -apple-system,system-ui';ctx.textBaseline='middle';
+  const guides=[['Schulter',.19],['Brust',.32],['Taille',.47],['Hüfte',.55],['Knie',.76]];
+  for(const [label,t] of guides){const y=box.minY+box.h*t;ctx.strokeStyle='rgba(255,200,87,.75)';ctx.setLineDash([5,5]);ctx.beginPath();ctx.moveTo(Math.max(8,box.minX-30),y);ctx.lineTo(Math.min(innerWidth-8,box.maxX+30),y);ctx.stroke();ctx.fillStyle='rgba(255,220,145,.95)';ctx.fillText(label,Math.max(8,box.minX-28),y-8)}
+  ctx.setLineDash([]);ctx.globalAlpha=1
+ }
+ async reloadCurrentViews(){
+  const p=this.people[this.personIndex];if(!p)return;
+  this.ref.front=await this.loadMask(p.front,'#silFront');this.ref.side=await this.loadMask(p.side,'#silSide');
+  this.panel.querySelector('#silViewConfidence').textContent=`Manuell gewählt · Front/Seite bitte am Bild prüfen`;
+  this.drawViewportOverlay()
+ }
+ async swapViews(){
+  const p=this.people[this.personIndex];if(!p)return;[p.front,p.side]=[p.side,p.front];await this.reloadCurrentViews()
+ }
+ async cycleSideCandidate(){
+  const p=this.people[this.personIndex],a=p?._viewCandidates;if(!a?.length)return;
+  let i=(p._sideIndex??1)+1;if(i>=a.length)i=1;if(i===p._frontIndex)i=(i+1)%a.length;
+  p._sideIndex=i;p.side=a[i].key;await this.reloadCurrentViews()
+ }
  renderMeasures(){const p=this.people[this.personIndex],m=p?.meta||{};const keys=Object.keys(m).filter(k=>/height|weight|chest|waist|hip|shoulder|arm|bicep|calf|thigh|wrist|ankle|leg|forearm/i.test(k));this.panel.querySelector('#silMeasures').innerHTML=keys.length?keys.slice(0,18).map(k=>`<span><small>${esc(k)}</small><b>${esc(m[k])}</b></span>`).join(''):'<div class="batchInfo">Metadaten für diese Person wurden aus dem ersten automatischen Listing noch nicht sicher zugeordnet.</div>'}
  async makeBaseline(){const p=this.people[this.personIndex];if(!p)return;this.startSnap=this.engineSnapshot();if(Number.isFinite(p.gender))this.engine.state.gender=p.gender;if(Number.isFinite(p.height)){const target=(p.height-150)/50;this.engine.state.height=Math.max(0,Math.min(1,target))}if(Number.isFinite(p.weight)){const bmi=p.weight/Math.pow((p.height||175)/100,2);this.engine.state.weight=Math.max(0,Math.min(1,(bmi-16)/20))}this.engine.state.breastSize=.5;this.engine.state.breastFirmness=.5;for(const k of Object.keys(this.engine.directState))this.engine.directState[k]=0;this.engine.updateBody();this.engine.computeMetrics();this.panel.querySelector('#silBaseState').textContent='GEBAUT';await this.measureScore(true)}
  engineSnapshot(){return {state:JSON.parse(JSON.stringify(this.engine.state)),direct:JSON.parse(JSON.stringify(this.engine.directState))}}
