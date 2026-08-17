@@ -1,4 +1,4 @@
-# BODY LAB v3.27.0
+# BODY LAB v3.28.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -525,3 +525,7 @@ B: female Chest Depth gets priority; adaptive overdrive up to 200% is allowed on
 C: collateral geometry is repaired while the achieved Chest Depth is guarded.
 Men retain the already-good direct torso-depth path.
 If validation passes, proceed directly to untouched final holdout and freeze.
+
+
+## v3.28.0 — Multi-Stage Collateral Repair
+Preserves V3.27 chest depth, then repairs hip, waist, torso and remaining collateral measures in protected stages. Adaptive overdrive extends 100 → 120 → 150 → 175 → 200% only while real mesh error improves.

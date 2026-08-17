@@ -1,7 +1,7 @@
 {
   "name": "BODY LAB",
-  "version": "3.27.0",
-  "display": "BODY LAB v3.27.0",
+  "version": "3.28.0",
+  "display": "BODY LAB v3.28.0",
   "versionSource": "index.html meta[name=bodylab-version]",
-  "status": "hierarchical-depth-repair"
+  "status": "multistage-collateral-repair"
 }
