@@ -1,4 +1,4 @@
-# BODY LAB v4.0.0
+# BODY LAB v4.0.1
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -561,7 +561,7 @@ The manual Live Review now behaves like the main Body Lab bottom sheet:
 No solver, calibration or mesh-fit logic changed in this patch.
 
 
-## v4.0.0 — Silhouette Lab Alpha
+## v4.0.1 — Silhouette Lab Alpha
 
 A clean calibration branch that does not use the V3.29 female chest/repair fitter.
 

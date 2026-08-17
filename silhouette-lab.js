@@ -1,4 +1,4 @@
-const V='4.0.0';
+const V='4.0.1';
 const S3='https://amazon-bodym.s3.us-west-2.amazonaws.com';
 const fmt=x=>Number.isFinite(+x)?(+x).toFixed(2):'—';
 const esc=s=>String(s??'').replace(/[&<>\"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[c]));
@@ -77,5 +77,56 @@ export class SilhouetteLab{
  async measureScore(render=false){const s=this.score();if(!s)return null;if(render)this.panel.querySelector('#silScoreCard').innerHTML=`<b>Konturfehler außerhalb Toleranz</b><span>Front <strong>${fmt(s.front)} cm</strong> · Seite <strong>${fmt(s.side)} cm</strong> · kombiniert <strong>${fmt(s.total)} cm</strong></span>`;this.panel.querySelector('#silScoreNow').textContent=fmt(s.total)+' cm';return s}
  candidateControls(){const out=[];for(const g of this.engine.groups||[])for(const c of g.controls||[]){const sem=(g.id+' '+(c.group||'')+' '+(c.target||'')).toLowerCase();if(!c.id||/face|hand|finger|toe|ear|eye|nose|mouth/.test(sem))continue;if(/torso|chest|breast|waist|stomach|hip|pelvis|butt|shoulder|neck|upperleg|lowerleg|upperarm|lowerarm/.test(sem))out.push(c)}return out.slice(0,90)}
  log(text,cls=''){const d=this.panel.querySelector('#silLog'),p=document.createElement('div');p.className=cls;p.textContent=text;d.prepend(p);while(d.children.length>80)d.lastChild.remove()}
- async liveFit(){if(this.running)return;if(!this.people.length||!this.ref.front){this.log('Erst Referenzperson laden.','bad');return}this.running=true;this.pause=false;this.startSnap=this.engineSnapshot();const controls=this.candidateControls(),live=this.panel.querySelector('#silLive').checked;this.panel.querySelector('#silFitState').textContent='LÄUFT';let current=await this.measureScore(true),trial=0,total=controls.length*6;try{for(const step of [.18,.09,.045]){for(const c of controls){if(this.pause)throw new Error('PAUSE');const old=+this.engine.directState[c.id]||0;let best={v:old,s:current};for(const dir of [-1,1]){const v=Math.max(-1,Math.min(1,old+dir*step));this.engine.directState[c.id]=v;this.engine.updateBody({normals:false,metrics:false});const s=this.score();trial++;this.panel.querySelector('#silStage').textContent=`${c.target} ${v>=0?'+':''}${v.toFixed(2)}`;this.panel.querySelector('#silProgressBar').style.width=Math.min(100,100*trial/total)+'%';if(s&&s.total<best.s.total-.015)best={v,s};if(live)await new Promise(r=>setTimeout(r,45))}this.engine.directState[c.id]=best.v;this.engine.updateBody({normals:false,metrics:false});if(best.v!==old){this.log(`✓ ${c.target}: ${old.toFixed(2)} → ${best.v.toFixed(2)} | ${current.total.toFixed(2)} → ${best.s.total.toFixed(2)} cm`,'ok');current=best.s}else{this.log(`↩ ${c.target}: beide Richtungen verworfen`,'muted')}if(live&&best.v!==old)await new Promise(r=>setTimeout(r,90))}}}this.engine.updateBody();this.engine.computeMetrics();await this.measureScore(true);this.panel.querySelector('#silFitState').textContent='FERTIG'}catch(e){this.panel.querySelector('#silFitState').textContent=e.message==='PAUSE'?'PAUSE':'FEHLER';if(e.message!=='PAUSE')this.log(e.message,'bad')}finally{this.running=false}}
+ async liveFit(){
+  if(this.running)return;
+  if(!this.people.length||!this.ref.front){this.log('Erst Referenzperson laden.','bad');return;}
+  this.running=true;
+  this.pause=false;
+  this.startSnap=this.engineSnapshot();
+  const controls=this.candidateControls();
+  const live=this.panel.querySelector('#silLive').checked;
+  this.panel.querySelector('#silFitState').textContent='LÄUFT';
+  let current=await this.measureScore(true);
+  let trial=0;
+  const total=controls.length*6;
+  try{
+   for(const step of [.18,.09,.045]){
+    for(const c of controls){
+     if(this.pause)throw new Error('PAUSE');
+     const old=+this.engine.directState[c.id]||0;
+     let best={v:old,s:current};
+     for(const dir of [-1,1]){
+      const v=Math.max(-1,Math.min(1,old+dir*step));
+      this.engine.directState[c.id]=v;
+      this.engine.updateBody({normals:false,metrics:false});
+      const score=this.score();
+      trial++;
+      this.panel.querySelector('#silStage').textContent=`${c.target} ${v>=0?'+':''}${v.toFixed(2)}`;
+      this.panel.querySelector('#silProgressBar').style.width=Math.min(100,100*trial/total)+'%';
+      if(score&&best.s&&score.total<best.s.total-.015)best={v:v,s:score};
+      if(live)await new Promise(resolve=>setTimeout(resolve,45));
+     }
+     this.engine.directState[c.id]=best.v;
+     this.engine.updateBody({normals:false,metrics:false});
+     if(best.v!==old){
+      this.log(`✓ ${c.target}: ${old.toFixed(2)} → ${best.v.toFixed(2)} | ${current.total.toFixed(2)} → ${best.s.total.toFixed(2)} cm`,'ok');
+      current=best.s;
+     }else{
+      this.log(`↩ ${c.target}: beide Richtungen verworfen`,'muted');
+     }
+     if(live&&best.v!==old)await new Promise(resolve=>setTimeout(resolve,90));
+    }
+   }
+   this.engine.updateBody();
+   this.engine.computeMetrics();
+   await this.measureScore(true);
+   this.panel.querySelector('#silFitState').textContent='FERTIG';
+  }catch(e){
+   this.panel.querySelector('#silFitState').textContent=e.message==='PAUSE'?'PAUSE':'FEHLER';
+   if(e.message!=='PAUSE')this.log(e.message,'bad');
+  }finally{
+   this.running=false;
+  }
+ }
+
 }

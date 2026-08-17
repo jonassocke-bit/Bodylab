@@ -1,6 +1,6 @@
 
 import * as THREE from "three";
-import {MEASURES} from "./measure-review.js?v=4.0.0";
+import {MEASURES} from "./measure-review.js?v=4.0.1";
 
 const KEY="bodylab_live_manual_review_v330";
 const fmt=x=>Number.isFinite(x)?x.toFixed(2):"—";
@@ -38,7 +38,7 @@ export class LiveManualReview{
    <div class="mrSheetHandle" id="lmrHandle"><span></span></div>
    <div class="lmrScroll">
    <div class="lmrHead">
-    <div><div class="sectionLabel">LIVE-MESS-REVISION · V4.0.0</div><h2>10 Personen manuell prüfen</h2>
+    <div><div class="sectionLabel">LIVE-MESS-REVISION · V4.0.1</div><h2>10 Personen manuell prüfen</h2>
     <p>Studienwert ↔ aktuelles Mesh. Markierung am Modell oder Tabellenzeile antippen.</p></div>
     <button id="lmrClose">Schließen</button>
    </div>
