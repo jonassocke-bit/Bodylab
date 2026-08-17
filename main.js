@@ -1,17 +1,18 @@
-import {probeBootModules} from "./boot-probe.js?v=3.29.1";
+import {probeBootModules} from "./boot-probe.js?v=3.30.0";
 
-import {BodyEngine} from "./engine.js?v=3.29.1";
-import {BodyUI} from "./ui.js?v=3.29.1";
-import {setupDebug} from "./debug.js?v=3.29.1";
-import {MeasurementLab} from "./generator.js?v=3.29.1";
-import {BatchLab} from "./batch.js?v=3.29.1";
-import {CalibrationLab} from "./calibration.js?v=3.29.1";
-import {CalibratedSolverV37} from "./solver-v37.js?v=3.29.1";
-import {SolverV312} from "./solver-v312.js?v=3.29.1";
-import {FrozenSolverV311} from "./solver-v311-frozen.js?v=3.29.1";
-import {FinalValidationV315} from "./final-validation.js?v=3.29.1";
-import {SolverV316} from "./solver-v316.js?v=3.29.1";
-import {MeasureReviewLab} from "./measure-review.js?v=3.29.1";
+import {BodyEngine} from "./engine.js?v=3.30.0";
+import {BodyUI} from "./ui.js?v=3.30.0";
+import {setupDebug} from "./debug.js?v=3.30.0";
+import {MeasurementLab} from "./generator.js?v=3.30.0";
+import {BatchLab} from "./batch.js?v=3.30.0";
+import {CalibrationLab} from "./calibration.js?v=3.30.0";
+import {CalibratedSolverV37} from "./solver-v37.js?v=3.30.0";
+import {SolverV312} from "./solver-v312.js?v=3.30.0";
+import {FrozenSolverV311} from "./solver-v311-frozen.js?v=3.30.0";
+import {FinalValidationV315} from "./final-validation.js?v=3.30.0";
+import {SolverV316} from "./solver-v316.js?v=3.30.0";
+import {MeasureReviewLab} from "./measure-review.js?v=3.30.0";
+import {LiveManualReview} from "./live-review.js?v=3.30.0";
 
 const title=document.getElementById("loadTitle"),detail=document.getElementById("loadDetail"),card=document.getElementById("loadCard");
 const APP_VERSION=document.querySelector('meta[name="bodylab-version"]')?.content||"unknown";
@@ -50,11 +51,12 @@ async function boot(){
  const calibrationLab=new CalibrationLab(engine,ui,batchLab,solverV37,solverV312,finalSolverV316,measurementLab);
  const finalValidationV315=new FinalValidationV315(engine,ui,measurementLab,batchLab,frozenSolverV311,finalSolverV316);
  const measureReviewLab=new MeasureReviewLab(engine);
+ const liveManualReview=new LiveManualReview(engine,batchLab,calibrationLab,measureReviewLab);
  engine.computeMetrics();
  progress("Body Lab bereit","MakeHuman · Maße · Revision geladen");
  setTimeout(()=>card.classList.add("hidden"),500);
 
- window.BodyLab={version:APP_VERSION,engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,frozenSolverV311,finalSolverV316,finalValidationV315,measureReviewLab};
+ window.BodyLab={version:APP_VERSION,engine,ui,measurementLab,batchLab,calibrationLab,solverV37,solverV312,frozenSolverV311,finalSolverV316,finalValidationV315,measureReviewLab,liveManualReview};
 }
 boot().catch(err=>{
  console.error(err);

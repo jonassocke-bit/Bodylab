@@ -1,7 +1,7 @@
 {
   "name": "BODY LAB",
-  "version": "3.29.1",
-  "display": "BODY LAB v3.29.1",
+  "version": "3.30.0",
+  "display": "BODY LAB v3.30.0",
   "versionSource": "index.html meta[name=bodylab-version]",
-  "status": "resumable-live-multistage"
+  "status": "manual-live-measure-review"
 }

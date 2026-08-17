@@ -1,4 +1,4 @@
-# BODY LAB v3.29.1
+# BODY LAB v3.30.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -533,3 +533,18 @@ If validation passes, proceed directly to untouched final holdout and freeze.
 - calibration menu can be hidden while the optimizer continues; live HUD remains visible
 - optional 80 ms live visualization delay per morph step
 - V3.27 female chest-depth solution preserved; collateral hip/waist/torso repair uses adaptive overdrive up to 200% only while real mesh score improves
+
+
+## v3.30.0 — Live Manual Measurement Review
+Adds a manual ten-person revision mode:
+- deterministic mixed set of five women and five men from loaded study/test rows;
+- previous/next person navigation;
+- baseline or current V3.29 reconstruction;
+- all existing measurement-review markings visible on the mannequin at once;
+- clickable 3D measurement markers and synchronized highlighted table row;
+- study/reference value, current mesh value and delta for every measurable dimension;
+- revision wording (meaning, ANSUR/reference method, current Body Lab mapping);
+- explicit sex-specific Chest Depth note for women vs men;
+- per-person/per-measure plausibility status and notes saved locally.
+
+This mode does not train or alter the frozen calibration model.

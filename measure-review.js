@@ -2,7 +2,7 @@
 import * as THREE from "three";
 
 const KEY="bodylab_measure_review_v390";
-const MEASURES=[
+export const MEASURES=[
  {id:"chest",title:"Brustumfang",ansur:"Chest Circumference",kind:"path",path:"measure-bust-circ",group:"Kernmaße",confidence:"mittel",
   simple:"Waagerechter Umfang um den Brustkorb auf der von ANSUR festgelegten Brusthöhe. Das Maßband liegt nur am Körper an und soll nicht einschnüren.",
   protocol:"ANSUR misst den horizontalen Brustumfang im anthropometrischen Stand. Die Messhöhe ist durch die Brust-/Bustpoint-Landmarks festgelegt; gemessen wird bei ruhiger Atmung.",

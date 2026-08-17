@@ -311,3 +311,13 @@ body:has(#measureReviewPanel:not(.hidden)) #topActions{
 .fcStep .generatorActions{margin-top:9px}.fcReset{margin:18px 0 30px;text-align:center}
 
 #meshFitV321{margin-top:22px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px}
+
+/* v3.30 live manual measurement review */
+#liveReviewPanel{z-index:125;overflow:auto;padding:18px 22px 40px;background:rgba(13,13,16,.96)}
+.lmrHead{display:flex;justify-content:space-between;gap:14px;align-items:flex-start}.lmrHead h2{margin:5px 0 3px;font-size:26px}.lmrHead p{margin:0;color:#aaa}
+.lmrPersonBar{display:grid;grid-template-columns:58px 1fr 58px;gap:10px;align-items:center;margin:16px 0}.lmrPersonBar>div{text-align:center;background:#1c1c20;border:1px solid #35353c;border-radius:16px;padding:10px}.lmrPersonBar b,.lmrPersonBar small{display:block}
+.lmrActions{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}.lmrSelected{background:#19191d;border:1px solid #33343b;border-radius:18px;padding:14px;margin:12px 0}.lmrSelTitle{display:flex;justify-content:space-between;gap:12px}.lmrSelTitle h3{margin:0 0 4px;font-size:22px}.lmrBig{display:grid;grid-template-columns:repeat(3,auto);gap:2px 12px;text-align:right}.lmrBig b{font-size:20px}.lmrBig span{font-size:10px;color:#aaa}
+.lmrSexNote{margin:12px 0;padding:10px;border-radius:12px;background:#342728;border:1px solid #744;color:#ffd6d6;font-weight:600}.lmrSelected details{border-top:1px solid #303038;padding:9px 0}.lmrSelected summary{font-weight:650}.lmrSelected p{color:#bbb;line-height:1.42}
+.lmrTableWrap{overflow:auto;max-height:44vh;border:1px solid #33343b;border-radius:16px}.lmrTable{width:100%;border-collapse:collapse;font-size:13px}.lmrTable th{position:sticky;top:0;background:#18181c;z-index:2}.lmrTable th,.lmrTable td{padding:10px 8px;border-bottom:1px solid #2b2b31;text-align:right}.lmrTable th:first-child,.lmrTable td:first-child{text-align:left}.lmrTable tr{cursor:pointer}.lmrTable tr.active{background:#353037;outline:1px solid #866}.lmrTable tr.ok td:first-child{box-shadow:inset 3px 0 #6a7}.lmrTable tr.bad td:first-child{box-shadow:inset 3px 0 #b66}.lmrTable tr.unclear td:first-child{box-shadow:inset 3px 0 #aa7}.lmrTable td small{display:block;color:#888;font-size:10px}.lmrTable .warn{color:#ffb0b0;font-weight:700}
+.lmrFooter{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px}.lmrFooter textarea{grid-column:1/-1;min-height:74px;background:#222227;color:#eee;border:1px solid #44454d;border-radius:12px;padding:10px}
+@media(max-width:700px){#liveReviewPanel{padding:12px 14px 32px}.lmrSelTitle{display:block}.lmrBig{margin-top:10px;text-align:left}.lmrTable{min-width:560px}.lmrHead h2{font-size:22px}}
