@@ -1,4 +1,4 @@
-# BODY LAB v4.0.1
+# BODY LAB v4.0.2
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -576,3 +576,12 @@ Step-by-step workflow:
 The live fitter is intentionally bounded to the normal MakeHuman direct-morph range (-100% to +100%) in this alpha. It uses a curated body-only set and excludes face/hands/fingers/toes. The old V3.29 chest-overdrive path is not called.
 
 The BodyM source step is deliberately diagnostic: it verifies S3 listing and CORS pixel access on the actual iPhone. If AWS permits image display but blocks canvas pixel reads, the UI reports that explicitly so the next build can use an account-free intermediary rather than manual downloads.
+
+
+## v4.0.2 — BodyM relational metadata mapper
+- Reads the complete public S3 listing rather than stopping after 6000 keys.
+- Loads all CSV/TSV metadata tables.
+- Builds relational links between image IDs, subject/person IDs and measurement metadata.
+- Supports both one-row front/side mappings and multi-table subject↔photo mappings.
+- If front/side labels are absent, classifies the two silhouettes geometrically: the narrower normalized mask is treated as side view, the wider as front view.
+- Displays table names and headers in Step 1 as a diagnostic fallback.
