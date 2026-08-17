@@ -1,4 +1,4 @@
-# BODY LAB v3.30.1
+# BODY LAB v4.0.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -559,3 +559,20 @@ The manual Live Review now behaves like the main Body Lab bottom sheet:
 - the mannequin remains visible above the sheet and 3D measurement markers remain interactive.
 
 No solver, calibration or mesh-fit logic changed in this patch.
+
+
+## v4.0.0 — Silhouette Lab Alpha
+
+A clean calibration branch that does not use the V3.29 female chest/repair fitter.
+
+Step-by-step workflow:
+1. Test direct, anonymous BodyM access from the iPhone browser.
+2. Discover and load front/side silhouette pairs plus metadata from the public AWS Open Data bucket.
+3. Configure explicit tolerance zones for torso contour, limbs, and measurements.
+4. Build a conservative baseline from sex/height/weight and measure contour error.
+5. Run a live iterative silhouette fitter: candidate morph -> real mesh rebuild -> contour re-measure -> accept or revert -> continue.
+6. Perform human visual review before any large unattended batch is allowed.
+
+The live fitter is intentionally bounded to the normal MakeHuman direct-morph range (-100% to +100%) in this alpha. It uses a curated body-only set and excludes face/hands/fingers/toes. The old V3.29 chest-overdrive path is not called.
+
+The BodyM source step is deliberately diagnostic: it verifies S3 listing and CORS pixel access on the actual iPhone. If AWS permits image display but blocks canvas pixel reads, the UI reports that explicitly so the next build can use an account-free intermediary rather than manual downloads.
