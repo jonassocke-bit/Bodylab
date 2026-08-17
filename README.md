@@ -1,4 +1,4 @@
-# BODY LAB v3.26.0
+# BODY LAB v3.27.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -517,3 +517,11 @@ Stage 2:
 Men continue to use the stable direct torso-depth path.
 
 If this 100-person validation passes, proceed directly to the untouched final holdout and freeze.
+
+
+## v3.27.0 — Hierarchical Female Chest Fit
+A: stable baseline.
+B: female Chest Depth gets priority; adaptive overdrive up to 200% is allowed only while measured error continues to improve.
+C: collateral geometry is repaired while the achieved Chest Depth is guarded.
+Men retain the already-good direct torso-depth path.
+If validation passes, proceed directly to untouched final holdout and freeze.
