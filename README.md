@@ -1,4 +1,4 @@
-# BODY LAB v3.25.0
+# BODY LAB v3.26.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -500,3 +500,20 @@ For women:
 Men keep the direct torso-depth path that already performed well in V3.24.
 
 If the 100-person validation passes, the only remaining calibration operation is an untouched final holdout followed by production freeze.
+
+
+## v3.26.0 — Two-Stage Female Chest Fit
+
+Stage 1:
+- torso depth and breast-local controls restricted to the normal ±100% range.
+
+Stage 2:
+- activates only if female Chest Depth still misses the solver target by more than 1.25 cm;
+- permits controlled overdrive on torso-scale-depth up to ±160%;
+- permits Breast Size up to 160% and local breast controls up to ±180%;
+- includes a mild overdrive penalty and the same collateral-geometry protection;
+- Stage 2 is retained only if it materially improves chest-depth error without a meaningful protected-geometry penalty.
+
+Men continue to use the stable direct torso-depth path.
+
+If this 100-person validation passes, proceed directly to the untouched final holdout and freeze.

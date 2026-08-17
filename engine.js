@@ -51,7 +51,7 @@ export class BodyEngine{
  }
  async loadMacroStack(){
   this.onProgress("MakeHuman-Makros …","Metadaten");
-  const meta=await import("./exact-macro-meta.js?v=3.25.0");
+  const meta=await import("./exact-macro-meta.js?v=3.26.0");
   this.exactMeta=meta.EXACT_META;
   this.exactChunks=[];
   for(let i=0;i<6;i++){
@@ -65,15 +65,15 @@ export class BodyEngine{
  }
  async loadAdvancedData(){
   this.onProgress("Detailparameter …","Body");
-  const [cfg,data]=await Promise.all([import("./modifier-config.js?v=3.25.0"),import("./body-morphs.js?v=3.25.0")]);
+  const [cfg,data]=await Promise.all([import("./modifier-config.js?v=3.26.0"),import("./body-morphs.js?v=3.26.0")]);
   this.groups=cfg.GROUPS;this.directData=data.DIRECT;
   this.onProgress("Detailparameter …","Face");
-  const [fc,fd]=await Promise.all([import("./face-config.js?v=3.25.0"),import("./face-morphs.js?v=3.25.0")]);
+  const [fc,fd]=await Promise.all([import("./face-config.js?v=3.26.0"),import("./face-morphs.js?v=3.26.0")]);
   this.faceGroups=fc.FACE_GROUPS;this.faceData=fd.FACE;
  }
  async loadRig(){
   this.onProgress("Rig lädt …","MakeHuman default");
-  const mod=await import("./rig-data.js?v=3.25.0");this.rig=mod.RIG;
+  const mod=await import("./rig-data.js?v=3.26.0");this.rig=mod.RIG;
   // Rig data is retained for the next validated BVH step. Do not replace the stable mesh yet.
   return Object.keys(this.rig.bones||{}).length;
  }

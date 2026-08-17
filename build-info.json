@@ -1,7 +1,7 @@
 {
   "name": "BODY LAB",
-  "version": "3.25.0",
-  "display": "BODY LAB v3.25.0",
+  "version": "3.26.0",
+  "display": "BODY LAB v3.26.0",
   "versionSource": "index.html meta[name=bodylab-version]",
-  "status": "local-breast-projection"
+  "status": "two-stage-overdrive"
 }
