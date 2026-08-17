@@ -1,4 +1,4 @@
-# BODY LAB v3.28.0
+# BODY LAB v3.29.0
 
 > **Aktueller Build: v3.21.3** — diese Datei, `VERSION`, die App-Anzeige und der Seitentitel werden gemeinsam ausgeliefert.
 
@@ -527,5 +527,9 @@ Men retain the already-good direct torso-depth path.
 If validation passes, proceed directly to untouched final holdout and freeze.
 
 
-## v3.28.0 — Multi-Stage Collateral Repair
-Preserves V3.27 chest depth, then repairs hip, waist, torso and remaining collateral measures in protected stages. Adaptive overdrive extends 100 → 120 → 150 → 175 → 200% only while real mesh error improves.
+## v3.29.0 — Resumable Live Multi-Stage Repair
+- checkpoint persisted after every completed validation person
+- start/resume, pause-after-current-person, discard checkpoint
+- calibration menu can be hidden while the optimizer continues; live HUD remains visible
+- optional 80 ms live visualization delay per morph step
+- V3.27 female chest-depth solution preserved; collateral hip/waist/torso repair uses adaptive overdrive up to 200% only while real mesh score improves
